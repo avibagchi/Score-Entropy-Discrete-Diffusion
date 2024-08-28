@@ -1,4 +1,4 @@
-name: sedd
+name: sedd_14
 channels:
   - nvidia/label/cuda-11.8.0
   - defaults
@@ -91,7 +91,8 @@ dependencies:
     - einops==0.7.0
     - fancy-einsum==0.0.3
     - filelock==3.9.0
-    - flash-attn==2.2.2
+    - packaging==23.2
+    # - flash-attn==2.2.2
     - frozenlist==1.4.1
     - fsspec==2023.10.0
     - gitdb==4.0.11
@@ -113,7 +114,6 @@ dependencies:
     - ninja==1.11.1.1
     - numpy==1.24.1
     - omegaconf==2.3.0
-    - packaging==23.2
     - pandas==2.2.1
     - pillow==10.2.0
     - protobuf==4.25.3
@@ -134,14 +134,18 @@ dependencies:
     - smmap==5.0.1
     - submitit==1.5.1
     - sympy==1.12
-    - tokenizers==0.15.2
-    - torch==2.0.1+cu118
-    - torchaudio==2.0.2+cu118
-    - torchvision==0.15.2+cu118
+    # - tokenizers==0.15.2
+    - torch==2.4.0
+    # - torch==2.0.1+cu118
+    - torchaudio==2.4.0
+    # - torchaudio==2.0.2+cu118
+    - torchvision==0.19.0
+    # - torchvision==0.15.2+cu118
     - tqdm==4.66.2
     - transformer-lens==1.14.0
     - transformers==4.38.1
-    - triton==2.0.0
+    - triton==3.0.0
+    # - triton==2.0.0
     - typeguard==2.13.3
     - typing-extensions==4.8.0
     - tzdata==2024.1
