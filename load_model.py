@@ -9,6 +9,7 @@ import noise_lib
 from omegaconf import OmegaConf
 
 def load_model_hf(dir, device):
+    print("loading utils2!")
     score_model = SEDD.from_pretrained(dir).to(device)
     graph = graph_lib.get_graph(score_model.config, device)
     noise = noise_lib.get_noise(score_model.config).to(device)
@@ -16,6 +17,7 @@ def load_model_hf(dir, device):
 
 
 def load_model_local(root_dir, device):
+    print("loading utils!")
     cfg = utils.load_hydra_config_from_run(root_dir)
     graph = graph_lib.get_graph(cfg, device)
     noise = noise_lib.get_noise(cfg).to(device)

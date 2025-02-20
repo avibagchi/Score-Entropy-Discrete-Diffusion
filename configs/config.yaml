@@ -1,13 +1,36 @@
 defaults:
   - _self_
-  - model: small
+  # - model: small
   - override hydra/launcher: submitit_slurm
 
-ngpus: 8
+# added this from small.yaml
+model:
+  name: small
+  type: ddit
+  hidden_size: 768
+  cond_dim: 128
+  length: 1024
+  n_blocks: 12
+  n_heads: 12
+  scale_by_sigma: True
+  dropout: 0.1
+  ngpus: 2
+  tokens: 50257
+
+name: small
+type: ddit
+hidden_size: 768
+cond_dim: 128
+length: 1024
+n_blocks: 12
+n_heads: 12
+scale_by_sigma: True
+dropout: 0.1
+ngpus: 2
 tokens: 50257
 
 training:
-  batch_size: 512
+  batch_size: 512 # changed from 512
   accum: 1
   n_iters: 1300001
   snapshot_freq: 50000
@@ -19,12 +42,12 @@ training:
   ema: 0.9999
 
 data:
-  train: openwebtext
-  valid: wikitext103
+  train: ptb # changed from openwebtext
+  valid: ptb # changed from wikitext103
   cache_dir: data
 
 graph:
-  type: absorb
+  type: uniform # changed from absorb
   file: data
   report_all: False
 
@@ -69,3 +92,5 @@ hydra:
     cpus_per_task: 40
     gpus_per_node: ${ngpus}
     constraint: null
+
+work_dir: '/home/avbagchi_umass_edu/Score-Entropy-Discrete-Diffusion/' # changed

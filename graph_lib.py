@@ -10,8 +10,12 @@ from catsample import sample_categorical
 
 def get_graph(config, device):
     if config.graph.type == "uniform":
+        print("Uniform!")
+        print(config)
         return Uniform(config.tokens)
     elif config.graph.type == "absorb":
+        print("Absorbing!")
+        print(config)
         return Absorbing(config.tokens)
     else:
         raise ValueError(f"Graph {config.graph.type} not valid")
@@ -239,7 +243,10 @@ class Absorbing(Graph):
         return score
 
     def sample_limit(self, *batch_dims):
+        # return torch.randint(low=0, high=self.dim, size=batch_dims, dtype=torch.int64, device='cpu')
+        # return torch.randint(0, self.dim, batch_dims)
         return (self.dim - 1) * torch.ones(*batch_dims, dtype=torch.int64)
+        
 
     def score_entropy(self, score, sigma, x, x0):
         rel_ind = x == self.dim - 1

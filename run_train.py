@@ -49,6 +49,7 @@ def run_multiprocess(rank, world_size, cfg, port):
 
 def _run(rank, world_size, cfg):
     torch.cuda.set_device(rank)
+    print("running here!")
     work_dir = cfg.work_dir
 
     # Create directories for experimental logs
@@ -221,3 +222,11 @@ def _run(rank, world_size, cfg):
                             del eval_model, logits, loss
 
                     dist.barrier()
+
+
+# added this 
+if __name__ == "__main__":
+    print("starting!")
+    root_dir = '/home/avbagchi_umass_edu/Score-Entropy-Discrete-Diffusion/configs'
+    cfg = utils.load_hydra_config_from_run(root_dir, True)
+    run_multiprocess(rank=0, world_size=1, cfg=cfg, port=29500)

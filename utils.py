@@ -5,8 +5,12 @@ import logging
 from omegaconf import OmegaConf, open_dict
 
 
-def load_hydra_config_from_run(load_dir):
-    cfg_path = os.path.join(load_dir, ".hydra/config.yaml")
+def load_hydra_config_from_run(load_dir, training=False):
+    if training:
+        cfg_path = os.path.join(load_dir, "config.yaml")
+    else:
+        cfg_path = os.path.join(load_dir, ".hydra/config.yaml")
+    print(cfg_path)
     cfg = OmegaConf.load(cfg_path)
     return cfg
 
