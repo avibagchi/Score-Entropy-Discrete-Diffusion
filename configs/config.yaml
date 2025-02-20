@@ -14,7 +14,7 @@ model:
   n_heads: 12
   scale_by_sigma: True
   dropout: 0.1
-  ngpus: 2
+  ngpus: 1
   tokens: 50257
 
 name: small
@@ -26,11 +26,11 @@ n_blocks: 12
 n_heads: 12
 scale_by_sigma: True
 dropout: 0.1
-ngpus: 2
+ngpus: 1
 tokens: 50257
 
 training:
-  batch_size: 512 # changed from 512
+  batch_size: 16 # changed from 512
   accum: 1
   n_iters: 1300001
   snapshot_freq: 50000

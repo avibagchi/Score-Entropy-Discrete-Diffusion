@@ -588,3 +588,201 @@ Parameter Group 0
 2025-02-20 00:19:51,625 - Scaler: <torch.cuda.amp.grad_scaler.GradScaler object at 0x745132060370>
 2025-02-20 00:19:51,626 - No checkpoint found at /home/avbagchi_umass_edu/Score-Entropy-Discrete-Diffusion/checkpoints-meta/checkpoint.pth. Returned the same state as input
 2025-02-20 00:19:53,599 - Starting training loop at step 0.
+2025-02-20 04:24:14,361 - /home/avbagchi_umass_edu/Score-Entropy-Discrete-Diffusion/
+2025-02-20 04:24:14,361 - {'defaults': ['_self_', {'override hydra/launcher': 'submitit_slurm'}], 'model': {'name': 'small', 'type': 'ddit', 'hidden_size': 768, 'cond_dim': 128, 'length': 1024, 'n_blocks': 12, 'n_heads': 12, 'scale_by_sigma': True, 'dropout': 0.1, 'ngpus': 1, 'tokens': 50257}, 'name': 'small', 'type': 'ddit', 'hidden_size': 768, 'cond_dim': 128, 'length': 1024, 'n_blocks': 12, 'n_heads': 12, 'scale_by_sigma': True, 'dropout': 0.1, 'ngpus': 1, 'tokens': 50257, 'training': {'batch_size': 128, 'accum': 1, 'n_iters': 1300001, 'snapshot_freq': 50000, 'log_freq': 50, 'eval_freq': 100, 'snapshot_freq_for_preemption': 10000, 'weight': 'standard', 'snapshot_sampling': True, 'ema': 0.9999}, 'data': {'train': 'ptb', 'valid': 'ptb', 'cache_dir': 'data'}, 'graph': {'type': 'uniform', 'file': 'data', 'report_all': False}, 'noise': {'type': 'loglinear', 'sigma_min': 0.0001, 'sigma_max': 20}, 'sampling': {'predictor': 'euler', 'steps': 128, 'noise_removal': True}, 'eval': {'batch_size': 512, 'perplexity': True, 'perplexity_batch_size': 32}, 'optim': {'weight_decay': 0, 'optimizer': 'AdamW', 'lr': 0.0003, 'beta1': 0.9, 'beta2': 0.999, 'eps': 1e-08, 'warmup': 2500, 'grad_clip': 1.0}, 'hydra': {'run': {'dir': 'exp_local/${data.train}/${now:%Y.%m.%d}/${now:%H%M%S}'}, 'sweep': {'dir': 'exp/${data.train}/${now:%Y.%m.%d}/${now:%H%M%S}', 'subdir': '${hydra.job.num}'}, 'launcher': {'max_num_timeout': 100000, 'partition': 'g40x', 'account': 'stanford', 'mem_gb': 96, 'cpus_per_task': 40, 'gpus_per_node': '${ngpus}', 'constraint': None}}, 'work_dir': '/home/avbagchi_umass_edu/Score-Entropy-Discrete-Diffusion/'}
+2025-02-20 04:24:14,361 - Found 1 CUDA devices.
+2025-02-20 04:24:14,362 - NVIDIA L40S 	 Memory: 44.52GB
+2025-02-20 04:24:14,362 - Found 32 total number of CPUs.
+2025-02-20 04:24:15,427 - Number of parameters in the model: 169625681
+2025-02-20 04:24:15,429 - DistributedDataParallel(
+  (module): SEDD(
+    (vocab_embed): EmbeddingLayer()
+    (sigma_map): TimestepEmbedder(
+      (mlp): Sequential(
+        (0): Linear(in_features=256, out_features=128, bias=True)
+        (1): SiLU()
+        (2): Linear(in_features=128, out_features=128, bias=True)
+      )
+    )
+    (rotary_emb): Rotary()
+    (blocks): ModuleList(
+      (0-11): 12 x DDiTBlock(
+        (norm1): LayerNorm()
+        (attn_qkv): Linear(in_features=768, out_features=2304, bias=False)
+        (attn_out): Linear(in_features=768, out_features=768, bias=False)
+        (dropout1): Dropout(p=0.1, inplace=False)
+        (norm2): LayerNorm()
+        (mlp): Sequential(
+          (0): Linear(in_features=768, out_features=3072, bias=True)
+          (1): GELU(approximate='tanh')
+          (2): Linear(in_features=3072, out_features=768, bias=True)
+        )
+        (dropout2): Dropout(p=0.1, inplace=False)
+        (adaLN_modulation): Linear(in_features=128, out_features=4608, bias=True)
+      )
+    )
+    (output_layer): DDitFinalLayer(
+      (norm_final): LayerNorm()
+      (linear): Linear(in_features=768, out_features=50257, bias=True)
+      (adaLN_modulation): Linear(in_features=128, out_features=1536, bias=True)
+    )
+  )
+)
+2025-02-20 04:24:15,429 - EMA: <model.ema.ExponentialMovingAverage object at 0x74d49869e220>
+2025-02-20 04:24:15,431 - Optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0003
+    maximize: False
+    weight_decay: 0
+)
+2025-02-20 04:24:15,431 - Scaler: <torch.cuda.amp.grad_scaler.GradScaler object at 0x74d49869e3a0>
+2025-02-20 04:24:15,432 - No checkpoint found at /home/avbagchi_umass_edu/Score-Entropy-Discrete-Diffusion/checkpoints-meta/checkpoint.pth. Returned the same state as input
+2025-02-20 04:24:16,965 - Starting training loop at step 0.
+2025-02-20 04:27:30,715 - /home/avbagchi_umass_edu/Score-Entropy-Discrete-Diffusion/
+2025-02-20 04:27:30,715 - {'defaults': ['_self_', {'override hydra/launcher': 'submitit_slurm'}], 'model': {'name': 'small', 'type': 'ddit', 'hidden_size': 768, 'cond_dim': 128, 'length': 1024, 'n_blocks': 12, 'n_heads': 12, 'scale_by_sigma': True, 'dropout': 0.1, 'ngpus': 1, 'tokens': 50257}, 'name': 'small', 'type': 'ddit', 'hidden_size': 768, 'cond_dim': 128, 'length': 1024, 'n_blocks': 12, 'n_heads': 12, 'scale_by_sigma': True, 'dropout': 0.1, 'ngpus': 1, 'tokens': 50257, 'training': {'batch_size': 16, 'accum': 1, 'n_iters': 1300001, 'snapshot_freq': 50000, 'log_freq': 50, 'eval_freq': 100, 'snapshot_freq_for_preemption': 10000, 'weight': 'standard', 'snapshot_sampling': True, 'ema': 0.9999}, 'data': {'train': 'ptb', 'valid': 'ptb', 'cache_dir': 'data'}, 'graph': {'type': 'uniform', 'file': 'data', 'report_all': False}, 'noise': {'type': 'loglinear', 'sigma_min': 0.0001, 'sigma_max': 20}, 'sampling': {'predictor': 'euler', 'steps': 128, 'noise_removal': True}, 'eval': {'batch_size': 512, 'perplexity': True, 'perplexity_batch_size': 32}, 'optim': {'weight_decay': 0, 'optimizer': 'AdamW', 'lr': 0.0003, 'beta1': 0.9, 'beta2': 0.999, 'eps': 1e-08, 'warmup': 2500, 'grad_clip': 1.0}, 'hydra': {'run': {'dir': 'exp_local/${data.train}/${now:%Y.%m.%d}/${now:%H%M%S}'}, 'sweep': {'dir': 'exp/${data.train}/${now:%Y.%m.%d}/${now:%H%M%S}', 'subdir': '${hydra.job.num}'}, 'launcher': {'max_num_timeout': 100000, 'partition': 'g40x', 'account': 'stanford', 'mem_gb': 96, 'cpus_per_task': 40, 'gpus_per_node': '${ngpus}', 'constraint': None}}, 'work_dir': '/home/avbagchi_umass_edu/Score-Entropy-Discrete-Diffusion/'}
+2025-02-20 04:27:30,715 - Found 1 CUDA devices.
+2025-02-20 04:27:30,715 - NVIDIA L40S 	 Memory: 44.52GB
+2025-02-20 04:27:30,715 - Found 32 total number of CPUs.
+2025-02-20 04:27:31,777 - Number of parameters in the model: 169625681
+2025-02-20 04:27:31,779 - DistributedDataParallel(
+  (module): SEDD(
+    (vocab_embed): EmbeddingLayer()
+    (sigma_map): TimestepEmbedder(
+      (mlp): Sequential(
+        (0): Linear(in_features=256, out_features=128, bias=True)
+        (1): SiLU()
+        (2): Linear(in_features=128, out_features=128, bias=True)
+      )
+    )
+    (rotary_emb): Rotary()
+    (blocks): ModuleList(
+      (0-11): 12 x DDiTBlock(
+        (norm1): LayerNorm()
+        (attn_qkv): Linear(in_features=768, out_features=2304, bias=False)
+        (attn_out): Linear(in_features=768, out_features=768, bias=False)
+        (dropout1): Dropout(p=0.1, inplace=False)
+        (norm2): LayerNorm()
+        (mlp): Sequential(
+          (0): Linear(in_features=768, out_features=3072, bias=True)
+          (1): GELU(approximate='tanh')
+          (2): Linear(in_features=3072, out_features=768, bias=True)
+        )
+        (dropout2): Dropout(p=0.1, inplace=False)
+        (adaLN_modulation): Linear(in_features=128, out_features=4608, bias=True)
+      )
+    )
+    (output_layer): DDitFinalLayer(
+      (norm_final): LayerNorm()
+      (linear): Linear(in_features=768, out_features=50257, bias=True)
+      (adaLN_modulation): Linear(in_features=128, out_features=1536, bias=True)
+    )
+  )
+)
+2025-02-20 04:27:31,779 - EMA: <model.ema.ExponentialMovingAverage object at 0x7ac9a675e220>
+2025-02-20 04:27:31,781 - Optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0003
+    maximize: False
+    weight_decay: 0
+)
+2025-02-20 04:27:31,781 - Scaler: <torch.cuda.amp.grad_scaler.GradScaler object at 0x7ac9a675e3a0>
+2025-02-20 04:27:31,781 - No checkpoint found at /home/avbagchi_umass_edu/Score-Entropy-Discrete-Diffusion/checkpoints-meta/checkpoint.pth. Returned the same state as input
+2025-02-20 04:27:33,961 - Starting training loop at step 0.
+2025-02-20 04:41:50,175 - /home/avbagchi_umass_edu/Score-Entropy-Discrete-Diffusion/
+2025-02-20 04:41:50,175 - {'defaults': ['_self_', {'override hydra/launcher': 'submitit_slurm'}], 'model': {'name': 'small', 'type': 'ddit', 'hidden_size': 768, 'cond_dim': 128, 'length': 1024, 'n_blocks': 12, 'n_heads': 12, 'scale_by_sigma': True, 'dropout': 0.1, 'ngpus': 1, 'tokens': 50257}, 'name': 'small', 'type': 'ddit', 'hidden_size': 768, 'cond_dim': 128, 'length': 1024, 'n_blocks': 12, 'n_heads': 12, 'scale_by_sigma': True, 'dropout': 0.1, 'ngpus': 1, 'tokens': 50257, 'training': {'batch_size': 16, 'accum': 1, 'n_iters': 1300001, 'snapshot_freq': 50000, 'log_freq': 50, 'eval_freq': 100, 'snapshot_freq_for_preemption': 10000, 'weight': 'standard', 'snapshot_sampling': True, 'ema': 0.9999}, 'data': {'train': 'ptb', 'valid': 'ptb', 'cache_dir': 'data'}, 'graph': {'type': 'uniform', 'file': 'data', 'report_all': False}, 'noise': {'type': 'loglinear', 'sigma_min': 0.0001, 'sigma_max': 20}, 'sampling': {'predictor': 'euler', 'steps': 128, 'noise_removal': True}, 'eval': {'batch_size': 512, 'perplexity': True, 'perplexity_batch_size': 32}, 'optim': {'weight_decay': 0, 'optimizer': 'AdamW', 'lr': 0.0003, 'beta1': 0.9, 'beta2': 0.999, 'eps': 1e-08, 'warmup': 2500, 'grad_clip': 1.0}, 'hydra': {'run': {'dir': 'exp_local/${data.train}/${now:%Y.%m.%d}/${now:%H%M%S}'}, 'sweep': {'dir': 'exp/${data.train}/${now:%Y.%m.%d}/${now:%H%M%S}', 'subdir': '${hydra.job.num}'}, 'launcher': {'max_num_timeout': 100000, 'partition': 'g40x', 'account': 'stanford', 'mem_gb': 96, 'cpus_per_task': 40, 'gpus_per_node': '${ngpus}', 'constraint': None}}, 'work_dir': '/home/avbagchi_umass_edu/Score-Entropy-Discrete-Diffusion/'}
+2025-02-20 04:41:50,175 - Found 1 CUDA devices.
+2025-02-20 04:41:50,175 - NVIDIA A100-SXM4-80GB 	 Memory: 79.14GB
+2025-02-20 04:41:50,175 - Found 112 total number of CPUs.
+2025-02-20 04:41:51,748 - Number of parameters in the model: 169625681
+2025-02-20 04:41:51,750 - DistributedDataParallel(
+  (module): SEDD(
+    (vocab_embed): EmbeddingLayer()
+    (sigma_map): TimestepEmbedder(
+      (mlp): Sequential(
+        (0): Linear(in_features=256, out_features=128, bias=True)
+        (1): SiLU()
+        (2): Linear(in_features=128, out_features=128, bias=True)
+      )
+    )
+    (rotary_emb): Rotary()
+    (blocks): ModuleList(
+      (0-11): 12 x DDiTBlock(
+        (norm1): LayerNorm()
+        (attn_qkv): Linear(in_features=768, out_features=2304, bias=False)
+        (attn_out): Linear(in_features=768, out_features=768, bias=False)
+        (dropout1): Dropout(p=0.1, inplace=False)
+        (norm2): LayerNorm()
+        (mlp): Sequential(
+          (0): Linear(in_features=768, out_features=3072, bias=True)
+          (1): GELU(approximate='tanh')
+          (2): Linear(in_features=3072, out_features=768, bias=True)
+        )
+        (dropout2): Dropout(p=0.1, inplace=False)
+        (adaLN_modulation): Linear(in_features=128, out_features=4608, bias=True)
+      )
+    )
+    (output_layer): DDitFinalLayer(
+      (norm_final): LayerNorm()
+      (linear): Linear(in_features=768, out_features=50257, bias=True)
+      (adaLN_modulation): Linear(in_features=128, out_features=1536, bias=True)
+    )
+  )
+)
+2025-02-20 04:41:51,751 - EMA: <model.ema.ExponentialMovingAverage object at 0x75710bf0c250>
+2025-02-20 04:41:51,753 - Optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0003
+    maximize: False
+    weight_decay: 0
+)
+2025-02-20 04:41:51,753 - Scaler: <torch.cuda.amp.grad_scaler.GradScaler object at 0x75710bf0c3d0>
+2025-02-20 04:41:51,754 - No checkpoint found at /home/avbagchi_umass_edu/Score-Entropy-Discrete-Diffusion/checkpoints-meta/checkpoint.pth. Returned the same state as input
+2025-02-20 04:41:53,875 - Starting training loop at step 0.
+2025-02-20 04:41:57,805 - step: 0, training_loss: 4.78624e+04
+2025-02-20 04:42:03,125 - step: 0, evaluation_loss: 8.07254e+04
+2025-02-20 04:42:16,922 - step: 50, training_loss: 7.58414e+04
+2025-02-20 04:42:30,610 - step: 100, training_loss: 2.66703e+05
+2025-02-20 04:42:31,141 - step: 100, evaluation_loss: 1.67548e+05
+2025-02-20 04:42:44,829 - step: 150, training_loss: 3.20806e+04
+2025-02-20 04:42:58,518 - step: 200, training_loss: 6.35344e+04
+2025-02-20 04:42:59,048 - step: 200, evaluation_loss: 4.80562e+04
+2025-02-20 04:43:12,733 - step: 250, training_loss: 4.64132e+04
+2025-02-20 04:43:26,527 - step: 300, training_loss: 1.11840e+05
+2025-02-20 04:43:27,059 - step: 300, evaluation_loss: 9.37085e+04
+2025-02-20 04:43:40,752 - step: 350, training_loss: 3.57025e+04
+2025-02-20 04:43:54,447 - step: 400, training_loss: 4.27118e+04
+2025-02-20 04:43:54,984 - step: 400, evaluation_loss: 4.65542e+04
+2025-02-20 04:44:08,675 - step: 450, training_loss: 3.33858e+04
+2025-02-20 04:44:22,365 - step: 500, training_loss: 9.23723e+04
+2025-02-20 04:44:22,911 - step: 500, evaluation_loss: 5.12388e+04
+2025-02-20 04:44:36,711 - step: 550, training_loss: 3.94956e+04
+2025-02-20 04:44:50,403 - step: 600, training_loss: 4.78179e+04
+2025-02-20 04:44:50,948 - step: 600, evaluation_loss: 7.25870e+04
+2025-02-20 04:45:04,640 - step: 650, training_loss: 7.87726e+04
+2025-02-20 04:45:18,339 - step: 700, training_loss: 7.51103e+04
+2025-02-20 04:45:18,876 - step: 700, evaluation_loss: 1.79887e+05
+2025-02-20 04:45:32,572 - step: 750, training_loss: 7.57907e+04
+2025-02-20 04:45:46,372 - step: 800, training_loss: 5.88237e+04
+2025-02-20 04:45:46,911 - step: 800, evaluation_loss: 3.91696e+04
+2025-02-20 04:46:00,603 - step: 850, training_loss: 2.93630e+05

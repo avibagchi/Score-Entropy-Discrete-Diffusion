@@ -3,7 +3,7 @@
 #SBATCH --output=output.txt           # Output log file
 #SBATCH --error=error.txt             # Error log file
 #SBATCH --partition=gpu               # Request a GPU partition
-#SBATCH --gres=gpu:3                  # Request 1 GPU
+#SBATCH --gres=gpu:1                  # Request 1 GPU
 #SBATCH --nodes=1                     # Request 1 node
 #SBATCH --ntasks=1                    # Number of tasks (1 per GPU job)
 #SBATCH --cpus-per-task=4             # Number of CPU cores per task
