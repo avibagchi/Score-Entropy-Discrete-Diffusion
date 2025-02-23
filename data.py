@@ -12,6 +12,8 @@ import json
 from datasets import Dataset
 
 from torch.utils.data import DataLoader, DistributedSampler
+from transformers import AutoTokenizer
+
 
 
 def cycle_loader(dataloader, sampler=None):
@@ -125,6 +127,9 @@ def get_dataset(name, mode, cache_dir=None, block_size=1024, num_proc=8):
         dataset = load_dataset("ptb_text_only", cache_dir=cache_dir, trust_remote_code=True)
     elif name == "lambada":
         dataset = get_lambada_test_dataset()
+    elif name == "tinystories":
+        print("tinystoriesloadedd")
+        dataset = load_dataset("roneneldan/TinyStories", cache_dir=cache_dir)
     else:
         dataset = load_dataset(name, cache_dir=cache_dir)
 
@@ -151,7 +156,15 @@ def get_dataset(name, mode, cache_dir=None, block_size=1024, num_proc=8):
             return text
         return detok
 
-    tokenizer = GPT2TokenizerFast.from_pretrained('gpt2')
+    if name == "tinystories":
+        # print("thisistinystories")
+        tokenizer = AutoTokenizer.from_pretrained("roneneldan/TinyStories")
+        # new_tokens = ["<extra_token>"]  # You can name it anything unique
+        # tokenizer.add_tokens(new_tokens)
+    else:
+        # print("thisiselse")
+        tokenizer = GPT2TokenizerFast.from_pretrained('gpt2')
+
     EOS = tokenizer.encode(tokenizer.eos_token)[0]
 
     def preprocess_and_tokenize(example):
@@ -221,7 +234,7 @@ def get_dataloaders(config, distributed=True):
         train_set,
         batch_size=config.training.batch_size // (config.ngpus * config.training.accum),
         sampler=train_sampler,
-        num_workers=4,
+        num_workers=4, 
         pin_memory=True,
         shuffle=(train_sampler is None),
         persistent_workers=True,
@@ -230,7 +243,7 @@ def get_dataloaders(config, distributed=True):
         valid_set,
         batch_size=config.eval.batch_size // (config.ngpus * config.training.accum),
         sampler=test_sampler,
-        num_workers=4,
+        num_workers=4, 
         pin_memory=True,
         shuffle=(test_sampler is None),
     ))

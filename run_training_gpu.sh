@@ -13,14 +13,9 @@
 
 module load cuda/11.8.0
 
-# Load Miniconda module
 module load miniconda/22.11.1-1
 
-# Activate your Conda environment
-# source activate sedd_env
 
-# Optionally, check if Conda environment is active
 echo "Conda environment: $(which python)"
 
-# Run your Python script
-python run_train.py
+python run_train.py # changed this 

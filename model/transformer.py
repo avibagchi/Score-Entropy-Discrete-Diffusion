@@ -274,14 +274,15 @@ class SEDD(nn.Module, PyTorchModelHubMixin):
 
 
         if self.scale_by_sigma:
-            # assert self.absorb, "Haven't configured this to work."
+            assert self.absorb, "Haven't configured this to work."
             if self.absorb:
                 esigm1_log = torch.where(sigma < 0.5, torch.expm1(sigma), sigma.exp() - 1).log().to(x.dtype)[:, None, None]
                 x = x - esigm1_log - np.log(x.shape[-1] - 1)# this will be approximately averaged at 0
-            elif self.uniform:
+            # elif self.uniform:
+        
                 # changed here
-                x = x / (sigma[:, None, None] + 1e-6) 
-                x = x - torch.logsumexp(x, dim=-1, keepdim=True)
+                # x = x / (sigma[:, None, None] + 1e-6) 
+                # x = x - torch.logsumexp(x, dim=-1, keepdim=True)
         
         x = torch.scatter(x, -1, indices[..., None], torch.zeros_like(x[..., :1]))
 

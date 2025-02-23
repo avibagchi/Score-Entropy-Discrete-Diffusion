@@ -15,7 +15,7 @@ model:
   scale_by_sigma: True
   dropout: 0.1
   ngpus: 1
-  tokens: 50257
+  tokens: 50257 # changed from 50257
 
 name: small
 type: ddit
@@ -27,27 +27,27 @@ n_heads: 12
 scale_by_sigma: True
 dropout: 0.1
 ngpus: 1
-tokens: 50257
+tokens: 50257 # changed from 50257
 
 training:
-  batch_size: 16 # changed from 512
-  accum: 1
+  batch_size: 64 # changed from 512
+  accum: 4 # changed from 1
   n_iters: 1300001
-  snapshot_freq: 50000
+  snapshot_freq: 10000 # 50000
   log_freq: 50
   eval_freq: 100
-  snapshot_freq_for_preemption: 10000
+  snapshot_freq_for_preemption: 1000 # changed from 10000
   weight: standard
   snapshot_sampling: True
   ema: 0.9999
 
 data:
-  train: ptb # changed from openwebtext
-  valid: ptb # changed from wikitext103
-  cache_dir: data
+  train: tinystories # changed from openwebtext
+  valid: tinystories # changed from wikitext103
+  cache_dir: /scratch3/workspace/avbagchi_umass_edu-data_center
 
 graph:
-  type: uniform # changed from absorb
+  type: absorb # changed from absorb
   file: data
   report_all: False
 
@@ -64,7 +64,7 @@ sampling:
 eval:
   batch_size: 512
   perplexity: True
-  perplexity_batch_size: 32
+  perplexity_batch_size: 8
 
 optim:
   weight_decay: 0

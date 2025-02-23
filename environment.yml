@@ -1,4 +1,4 @@
-name: sedd_14
+name: sedd_20
 channels:
   - nvidia/label/cuda-11.8.0
   - defaults

@@ -50,7 +50,8 @@ def run_multiprocess(rank, world_size, cfg, port):
 def _run(rank, world_size, cfg):
     torch.cuda.set_device(rank)
     print("running here!")
-    work_dir = cfg.work_dir
+    # work_dir = cfg.work_dir
+    work_dir = cfg.data.cache_dir # changed here 
 
     # Create directories for experimental logs
     sample_dir = os.path.join(work_dir, "samples")
@@ -160,8 +161,12 @@ def _run(rank, world_size, cfg):
                 loss /= world_size
 
                 mprint("step: %d, training_loss: %.5e" % (step, loss.item()))
+                print("hi")
             
+            # print(cfg.training.snapshot_freq_for_preemption)
+            # print(rank)
             if step % cfg.training.snapshot_freq_for_preemption == 0 and rank == 0:
+                print("Saving small checkpoint...")
                 utils.save_checkpoint(checkpoint_meta_dir, state)
 
             if step % cfg.training.eval_freq == 0:
@@ -178,6 +183,7 @@ def _run(rank, world_size, cfg):
 
             if step > 0 and step % cfg.training.snapshot_freq == 0 or step == num_train_steps:
                 # Save the checkpoint.
+                print("Saving large checkpoint...")
                 save_step = step // cfg.training.snapshot_freq
                 if rank == 0:
                     utils.save_checkpoint(os.path.join(
@@ -196,6 +202,8 @@ def _run(rank, world_size, cfg):
                     ema.restore(score_model.parameters())
 
                     sentences = tokenizer.batch_decode(sample)
+                    for i, sentence in enumerate(sentences):
+                        print(f"Sample {i}:\n{sentence}\n{'='*80}")
                     
                     file_name = os.path.join(this_sample_dir, f"sample_{rank}.txt")
                     with open(file_name, 'w') as file:
@@ -206,6 +214,8 @@ def _run(rank, world_size, cfg):
                     if cfg.eval.perplexity:
                         with torch.no_grad():
                             eval_model = GPT2LMHeadModel.from_pretrained("gpt2-large").to(device).eval()
+                            print(f"Sample shape: {sample.shape[0]}")
+                            print(f"perplexity_batch_size: {cfg.eval.perplexity_batch_size}")
                             batches = sample.shape[0] // cfg.eval.perplexity_batch_size
                             total_perplexity = 0
                             for i in range(batches):
@@ -214,6 +224,7 @@ def _run(rank, world_size, cfg):
                                 logits = logits.transpose(-1, -2)
                                 perplexity = F.cross_entropy(logits[..., :-1], s[..., 1:], reduction="none").mean(dim=-1).exp().mean()
                                 total_perplexity += perplexity
+                            print(f"Batches: {batches}")
                             total_perplexity /= batches
                             dist.all_reduce(total_perplexity)
                             total_perplexity /= world_size
