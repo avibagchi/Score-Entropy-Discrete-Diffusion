@@ -12,7 +12,7 @@ model:
   length: 1024
   n_blocks: 12
   n_heads: 12
-  scale_by_sigma: True
+  scale_by_sigma: False # change this
   dropout: 0.1
   ngpus: 1
   tokens: 50257 # changed from 50257
@@ -24,7 +24,7 @@ cond_dim: 128
 length: 1024
 n_blocks: 12
 n_heads: 12
-scale_by_sigma: True
+scale_by_sigma: False # change this 
 dropout: 0.1
 ngpus: 1
 tokens: 50257 # changed from 50257
@@ -44,10 +44,10 @@ training:
 data:
   train: tinystories # changed from openwebtext
   valid: tinystories # changed from wikitext103
-  cache_dir: /scratch3/workspace/avbagchi_umass_edu-data_center
+  cache_dir: /scratch3/workspace/avbagchi_umass_edu-data_center/uniform
 
 graph:
-  type: absorb # changed from absorb
+  type: uniform # changed from absorb
   file: data
   report_all: False
 

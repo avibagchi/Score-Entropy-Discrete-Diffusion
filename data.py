@@ -129,7 +129,7 @@ def get_dataset(name, mode, cache_dir=None, block_size=1024, num_proc=8):
         dataset = get_lambada_test_dataset()
     elif name == "tinystories":
         print("tinystoriesloadedd")
-        dataset = load_dataset("roneneldan/TinyStories", cache_dir=cache_dir)
+        dataset = load_dataset("roneneldan/TinyStories", cache_dir="/scratch3/workspace/avbagchi_umass_edu-data_center") # changed this
     else:
         dataset = load_dataset(name, cache_dir=cache_dir)
 
