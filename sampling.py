@@ -127,8 +127,21 @@ def get_pc_sampler(graph, noise, batch_dims, predictor, steps, denoise=True, eps
     @torch.no_grad()
     def pc_sampler(model):
         sampling_score_fn = mutils.get_score_fn(model, train=False, sampling=True)
-        # change this 
-        x = graph.sample_limit(*batch_dims).to(device)
+        
+        # added this
+        watermark = False
+
+        if watermark:
+            from prc import PRC 
+            n = batch_dims[0]
+            encoding_key, decoding_key = PRC.KeyGen(n=n, message_length=512, false_positive_rate=1e-9, t=3, g=64, r=32)
+            x = PRC.Encode(encoding_key).to(device)
+        else:
+            x = graph.sample_limit(*batch_dims).to(device)
+        
+        # end added this 
+
+        print("init state...")
         print(x)
         timesteps = torch.linspace(1, eps, steps + 1, device=device)
         dt = (1 - eps) / steps

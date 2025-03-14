@@ -36,31 +36,28 @@ def sample(rank, world_size, cfg, port):
     # checkpoint_meta_dir = os.path.join(work_dir, "checkpoints-meta", "checkpoint.pth")
 
     checkpoint_meta_dir = '/scratch3/workspace/avbagchi_umass_edu-data_center/uniform/checkpoints/checkpoint_9.pth'
+    # checkpoint_meta_dir = '/scratch3/workspace/avbagchi_umass_edu-data_center/absorb/checkpoints/checkpoint_9.pth'
 
     # if rank == 0:
     #     utils.makedirs(sample_dir)
 
-    # Load model
     graph = graph_lib.get_graph(cfg, device)
     score_model = SEDD(cfg).to(device)
     score_model = DDP(score_model, device_ids=[rank], static_graph=True)
 
     ema = ExponentialMovingAverage(score_model.parameters(), decay=cfg.training.ema)
 
-    # Load state
     noise = noise_lib.get_noise(cfg).to(device)
     noise = DDP(noise, device_ids=[rank], static_graph=True)
     optimizer = losses.get_optimizer(cfg, chain(score_model.parameters(), noise.parameters()))
     scaler = torch.cuda.amp.GradScaler()
 
-    state = dict(optimizer=optimizer, scaler=scaler, model=score_model, noise=0, ema=ema, step=0)
+    state = dict(optimizer=optimizer, scaler=scaler, model=score_model, noise=noise, ema=ema, step=0)
     print(state)
     state = utils.restore_checkpoint(checkpoint_meta_dir, state, device)
 
-    # Load tokenizer
     tokenizer = GPT2TokenizerFast.from_pretrained('gpt2')
 
-    # Build sampling function
     sampling_eps = 1e-5
     sampling_shape = (cfg.training.batch_size // cfg.ngpus, cfg.model.length)
     sampling_fn = sampling.get_sampling_fn(cfg, graph, noise, sampling_shape, sampling_eps, device)
