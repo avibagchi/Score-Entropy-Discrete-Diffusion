@@ -133,11 +133,12 @@ def get_pc_sampler(graph, noise, batch_dims, predictor, steps, denoise=True, eps
 
         if watermark:
             import prc
-            n = batch_dims[0]
-            encoding_key, decoding_key = prc.KeyGen(n=n, message_length=512, false_positive_rate=1e-9, t=3, g=64, r=32)
-            encoding_key = encoding_key.to(device)
-            x = prc.Encode(encoding_key).to(device).long()
-            x = x.unsqueeze(1).repeat(1, batch_dims[1])
+            n = batch_dims[0] * batch_dims[1]  
+            message = prc.str_to_bin("Watermark Message")  
+            encoding_key, _ = prc.KeyGen(n=n)   
+            encoded_watermark = prc.Encode(encoding_key, message)  
+            encoded_watermark = encoded_watermark.to(device)  
+            x = torch.clamp(encoded_watermark.reshape(*batch_dims).to(device).long(), 0, 1)
         else:
             x = graph.sample_limit(*batch_dims).to(device)
         
