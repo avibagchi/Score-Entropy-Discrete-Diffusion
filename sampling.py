@@ -129,13 +129,15 @@ def get_pc_sampler(graph, noise, batch_dims, predictor, steps, denoise=True, eps
         sampling_score_fn = mutils.get_score_fn(model, train=False, sampling=True)
         
         # added this
-        watermark = False
+        watermark = True
 
         if watermark:
-            from prc import PRC 
+            import prc
             n = batch_dims[0]
-            encoding_key, decoding_key = PRC.KeyGen(n=n, message_length=512, false_positive_rate=1e-9, t=3, g=64, r=32)
-            x = PRC.Encode(encoding_key).to(device)
+            encoding_key, decoding_key = prc.KeyGen(n=n, message_length=512, false_positive_rate=1e-9, t=3, g=64, r=32)
+            encoding_key = encoding_key.to(device)
+            x = prc.Encode(encoding_key).to(device).long()
+            x = x.unsqueeze(1).repeat(1, batch_dims[1])
         else:
             x = graph.sample_limit(*batch_dims).to(device)
         
