@@ -9,7 +9,7 @@ def gumbel_softmax(categorical_probs, hard=False, eps=1e-9):
 
 def sample_categorical(categorical_probs, method="hard"):
     if method == "hard":
-        gumbel_norm = 1e-10 - (torch.rand_like(categorical_probs) + 1e-10).log()
+        gumbel_norm = 1e-10 - (torch.rand_like(categorical_probs) + 1e-10).log() # randomness here
         return (categorical_probs / gumbel_norm).argmax(dim=-1)
     else:
         raise ValueError(f"Method {method} for sampling categorical variables is not valid.")
