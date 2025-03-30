@@ -59,7 +59,8 @@ def sample(rank, world_size, cfg, port):
     tokenizer = GPT2TokenizerFast.from_pretrained('gpt2')
 
     sampling_eps = 1e-5
-    sampling_shape = (cfg.training.batch_size // cfg.ngpus, cfg.model.length)
+    # sampling_shape = (cfg.training.batch_size // cfg.ngpus, cfg.model.length)
+    sampling_shape = (1, 1024) # changed here 
     sampling_fn = sampling.get_sampling_fn(cfg, graph, noise, sampling_shape, sampling_eps, device)
 
     step = state['step']

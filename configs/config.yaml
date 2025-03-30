@@ -64,7 +64,7 @@ sampling:
 eval:
   batch_size: 512
   perplexity: True
-  perplexity_batch_size: 8
+  perplexity_batch_size: 1 # changed from 8
 
 optim:
   weight_decay: 0

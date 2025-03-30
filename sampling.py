@@ -140,9 +140,9 @@ def get_pc_sampler(graph, noise, batch_dims, predictor, steps, denoise=True, eps
             encoded_watermark = prc.Encode(encoding_key, message)  
             encoded_watermark = encoded_watermark.to(device)  
             x = torch.clamp(encoded_watermark.reshape(*batch_dims).to(device).long(), 0, 1)
-            print(x)
-            y = graph.sample_limit(*batch_dims).to(device)
-            print(y) # can delete this
+            # print(x)
+            # y = graph.sample_limit(*batch_dims).to(device)
+            # print(y) # can delete this
             # breakpoint()
             # x = torch.sigmoid(encoded_watermark.reshape(*batch_dims).to(device).long())
             # x = (encoded_watermark.reshape(*batch_dims).to(device).float() - encoded_watermark.min()) / (encoded_watermark.max() - encoded_watermark.min())
@@ -151,7 +151,7 @@ def get_pc_sampler(graph, noise, batch_dims, predictor, steps, denoise=True, eps
         else:
             x = graph.sample_limit(*batch_dims).to(device)
             
-        
+        torch.save(x, 'initial_noise.pt')
         # end added this 
 
         print("init state...")
