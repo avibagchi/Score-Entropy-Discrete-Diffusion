@@ -22,12 +22,11 @@ def cleanup():
     dist.destroy_process_group()
 
 def load_samples(file_path):
-    """Load and split samples from the output file."""
+    """Load single sample from file."""
     with open(file_path, 'r') as f:
         text = f.read()
-    samples = text.split('<|endoftext|>')
-    samples = [s.strip() for s in samples if s.strip()]
-    return samples
+    print(f"Loaded text (first 200 chars):\n{text[:200]}...")
+    return [text]  # Return as single-item list to maintain compatibility
 
 def forward_diffusion(model, graph, noise, x_0, steps=1024, device='cuda'):
     """Apply forward diffusion process to recover noise."""
@@ -81,46 +80,48 @@ def main():
     
     tokenizer = GPT2TokenizerFast.from_pretrained('gpt2')
     
-    # Load samples
+    # Load single sample
     samples = load_samples('output2.txt')
+    print(f"\nProcessing single sample")
     
-    # Process each sample
-    batch_size = cfg.training.batch_size // cfg.ngpus  # Match your sampling batch size
-    sampling_eps = 1e-5  # Match your sampling epsilon
+    # Process the sample
+    sample = samples[0]  # Get the single sample
     
-    for idx, sample in enumerate(samples):
-        # Tokenize the text
-        tokens = tokenizer(sample, return_tensors='pt').input_ids.to(device)
-        
-        # Ensure the sequence length is 1024 (cfg.model.length)
-        if tokens.shape[1] < cfg.model.length:
-            tokens = F.pad(tokens, (0, cfg.model.length - tokens.shape[1]), value=tokenizer.pad_token_id)
-        elif tokens.shape[1] > cfg.model.length:
-            tokens = tokens[:, :cfg.model.length]
-        
-        # Apply EMA weights as done in sampling
-        ema.store(score_model.parameters())
-        ema.copy_to(score_model.parameters())
-        
-        # Apply forward diffusion
-        recovered_noise = forward_diffusion(
-            score_model, 
-            graph, 
-            noise, 
-            tokens, 
-            steps=1024,  # Match your sampling steps
-            device=device
-        )
-        
-        # Restore original weights
-        ema.restore(score_model.parameters())
-        
-        # Save the recovered noise
-        torch.save(recovered_noise, f'recovered_noise_{idx}.pt')
-        # print(f"Processed sample {idx + 1}/{len(samples)}")
-        print(recovered_noise)
+    # Tokenize the text
+    tokens = tokenizer(sample, return_tensors='pt').input_ids.to(device)
+    print(f"Token shape before padding: {tokens.shape}")
+    
+    # Ensure the sequence length is 1024
+    if tokens.shape[1] < cfg.model.length:
+        tokens = F.pad(tokens, (0, cfg.model.length - tokens.shape[1]), value=tokenizer.pad_token_id)
+    elif tokens.shape[1] > cfg.model.length:
+        tokens = tokens[:, :cfg.model.length]
+    print(f"Token shape after padding: {tokens.shape}")
+    
+    # Apply EMA weights
+    ema.store(score_model.parameters())
+    ema.copy_to(score_model.parameters())
+    
+    # Apply forward diffusion
+    print("\nStarting forward diffusion...")
+    recovered_noise = forward_diffusion(
+        score_model, 
+        graph, 
+        noise, 
+        tokens, 
+        steps=1024,
+        device=device
+    )
+    
+    # Restore original weights
+    ema.restore(score_model.parameters())
+    
+    # Save the recovered noise
+    torch.save(recovered_noise, 'recovered_noise.pt')
+    print("\nSaved recovered noise to recovered_noise.pt")
+    print(f"Recovered noise shape: {recovered_noise.shape}")
 
-    cleanup()  # Add cleanup at the end
+    cleanup()
 
 if __name__ == "__main__":
     main()

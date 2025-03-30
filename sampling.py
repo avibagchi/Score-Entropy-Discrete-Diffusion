@@ -130,7 +130,7 @@ def get_pc_sampler(graph, noise, batch_dims, predictor, steps, denoise=True, eps
         sampling_score_fn = mutils.get_score_fn(model, train=False, sampling=True)
         
         # added this
-        watermark = True
+        watermark = False # changed to false 
 
         if watermark:
             import prc
