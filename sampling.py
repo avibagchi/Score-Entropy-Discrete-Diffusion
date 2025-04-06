@@ -60,11 +60,13 @@ class Predictor(abc.ABC):
 @register_predictor(name="euler")
 class EulerPredictor(Predictor):
     def update_fn(self, score_fn, x, t, step_size):
+        # breakpoint()
         sigma, dsigma = self.noise(t)
         score = score_fn(x, sigma)
 
         rev_rate = step_size * dsigma[..., None] * self.graph.reverse_rate(x, score)
         x = self.graph.sample_rate(x, rev_rate)
+        # breakpoint()
         return x
 
 @register_predictor(name="none")
@@ -103,6 +105,7 @@ class Denoiser:
             probs = probs[..., :-1]
         
         #return probs.argmax(dim=-1)
+        # breakpoint()
         return sample_categorical(probs) # random choice from probs, need to change this
                        
 
@@ -138,8 +141,12 @@ def get_pc_sampler(graph, noise, batch_dims, predictor, steps, denoise=True, eps
             message = prc.str_to_bin("W") # change to one bit  
             encoding_key, _ = prc.KeyGen(n=n)   
             encoded_watermark = prc.Encode(encoding_key, message)  
-            encoded_watermark = encoded_watermark.to(device)  
+            encoded_watermark = encoded_watermark.to(device)
             x = torch.clamp(encoded_watermark.reshape(*batch_dims).to(device).long(), 0, 1)
+            x = torch.full(encoded_watermark.reshape(*batch_dims).shape, 3000, device=device, dtype=torch.long)
+            # breakpoint()
+            # x = torch.full((1,1024),50521) # change here 
+            
             # print(x)
             # y = graph.sample_limit(*batch_dims).to(device)
             # print(y) # can delete this
@@ -150,12 +157,14 @@ def get_pc_sampler(graph, noise, batch_dims, predictor, steps, denoise=True, eps
             # make uniformly distributed between 0 and 1
         else:
             x = graph.sample_limit(*batch_dims).to(device)
+        
+        # breakpoint()
             
-        torch.save(x, 'initial_noise.pt')
+        torch.save(x, 'initial_noise_2.pt')
         # end added this 
 
-        print("init state...")
-        print(x)
+        # print("init state...")
+        # print(x)
         timesteps = torch.linspace(1, eps, steps + 1, device=device)
         dt = (1 - eps) / steps
 
@@ -166,13 +175,14 @@ def get_pc_sampler(graph, noise, batch_dims, predictor, steps, denoise=True, eps
             x = predictor.update_fn(sampling_score_fn, x, t, dt) # calls euler's predictor
         # END ODE HERE
             
-
+        # breakpoint()
         if denoise:
             # denoising step
             x = projector(x)
             t = timesteps[-1] * torch.ones(x.shape[0], 1, device=device)
             x = denoiser.update_fn(sampling_score_fn, x, t)
             
+        # breakpoint()
         return x
     
     return pc_sampler

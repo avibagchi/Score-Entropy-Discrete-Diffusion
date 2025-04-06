@@ -10,8 +10,8 @@ from catsample import sample_categorical
 
 def get_graph(config, device):
     if config.graph.type == "uniform":
-        print("Uniform!")
-        print(config)
+        # print("Uniform!")
+        # print(config)
         return Uniform(config.tokens)
     elif config.graph.type == "absorb":
         print("Absorbing!")
@@ -82,13 +82,37 @@ class Graph(abc.ABC):
         """
         Constructs the reverse rate. Which is score * transp_rate
         """
+        # added this 
+        vocab_size = score.shape[-1]
+        sequence_length = score.shape[1]  # 1024
+        
+        green_masks = []
+        for pos in range(sequence_length):
+            torch.manual_seed(pos)  # Seed based on position
+            pos_green_mask = torch.randint(0, 2, (vocab_size,), device=score.device)
+            green_masks.append(pos_green_mask)
+        
+        green_mask = torch.stack(green_masks, dim=0)
+        green_mask = green_mask.unsqueeze(0) 
+        
+        amplification = 100
+        score = score * (1 + green_mask * amplification)
+        # end of added
+
         normalized_rate = self.transp_rate(i) * score
 
+        # Remove direct self-transitions, Rate of leaving state = negative sum of rates to other states
+        # values of i provides indicies of current token
+        # negative values --> wants to leave the current state, each row sum should be 0
+        # breakpoint()
         normalized_rate.scatter_(-1, i[..., None], torch.zeros_like(normalized_rate))
+        #breakpoint()
         normalized_rate.scatter_(-1, i[..., None], -normalized_rate.sum(dim=-1, keepdim=True))
+        #breakpoint()
         return normalized_rate
 
     def sample_rate(self, i, rate):
+        # breakpoint()
         return sample_categorical(F.one_hot(i, num_classes=self.dim).to(rate) + rate)
 
     

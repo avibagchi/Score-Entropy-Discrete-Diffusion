@@ -10,7 +10,7 @@ def load_hydra_config_from_run(load_dir, training=False):
         cfg_path = os.path.join(load_dir, "config.yaml")
     else:
         cfg_path = os.path.join(load_dir, ".hydra/config.yaml")
-    print(cfg_path)
+    # print(cfg_path)
     cfg = OmegaConf.load(cfg_path)
     return cfg
 

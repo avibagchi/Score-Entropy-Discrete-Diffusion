@@ -44,6 +44,24 @@ def forward_diffusion(model, graph, noise, x_0, steps=1024, device='cuda'):
     
     return x
 
+def calculate_green_matches(recovered_tokens):
+    vocab_size = 50257 
+    sequence_length = recovered_tokens.shape[1]  
+    matches = 0
+    total = sequence_length  
+    
+    for pos in range(sequence_length):
+        torch.manual_seed(pos)
+        pos_green_mask = torch.randint(0, 2, (vocab_size,), device=recovered_tokens.device)
+        
+        token = recovered_tokens[0, pos]  # [0] because batch size is 1
+        
+        if pos_green_mask[token] == 1:
+            matches += 1
+    
+    percent_match = (matches / total) * 100
+    return percent_match
+
 def main():
     # Initialize distributed setup
     rank = 0
@@ -81,7 +99,8 @@ def main():
     tokenizer = GPT2TokenizerFast.from_pretrained('gpt2')
     
     # Load single sample
-    samples = load_samples('output2.txt')
+    samples = load_samples('output.txt')
+    breakpoint()
     print(f"\nProcessing single sample")
     
     # Process the sample
@@ -90,36 +109,40 @@ def main():
     # Tokenize the text
     tokens = tokenizer(sample, return_tensors='pt').input_ids.to(device)
     print(f"Token shape before padding: {tokens.shape}")
-    
+    breakpoint()
     # Ensure the sequence length is 1024
     if tokens.shape[1] < cfg.model.length:
         tokens = F.pad(tokens, (0, cfg.model.length - tokens.shape[1]), value=tokenizer.pad_token_id)
     elif tokens.shape[1] > cfg.model.length:
         tokens = tokens[:, :cfg.model.length]
     print(f"Token shape after padding: {tokens.shape}")
-    
+    # breakpoint()
     # Apply EMA weights
     ema.store(score_model.parameters())
     ema.copy_to(score_model.parameters())
     
     # Apply forward diffusion
-    print("\nStarting forward diffusion...")
-    recovered_noise = forward_diffusion(
-        score_model, 
-        graph, 
-        noise, 
-        tokens, 
-        steps=1024,
-        device=device
-    )
+    # print("\nStarting forward diffusion...")
+    # recovered_noise = forward_diffusion(
+    #     score_model, 
+    #     graph, 
+    #     noise, 
+    #     tokens, 
+    #     steps=1024,
+    #     device=device
+    # )
+    sample = torch.load('sample.pt')
+    print(sample.shape)
+    print("\nAnalyzing green list matches...")
+    percent_green_matches = calculate_green_matches(sample)
+    print(f"{percent_green_matches:.2f}% of tokens are in their position-specific green list")
+    
     
     # Restore original weights
     ema.restore(score_model.parameters())
+
+    # torch.save(recovered_noise, 'recovered_noise_3.pt')
     
-    # Save the recovered noise
-    torch.save(recovered_noise, 'recovered_noise.pt')
-    print("\nSaved recovered noise to recovered_noise.pt")
-    print(f"Recovered noise shape: {recovered_noise.shape}")
 
     cleanup()
 

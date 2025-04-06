@@ -26,6 +26,7 @@ def cleanup():
 
 
 def sample(rank, world_size, cfg, port):
+    # breakpoint()
     setup(rank, world_size, port)
     
     device = torch.device(f"cuda:{rank}" if torch.cuda.is_available() else "cpu")
@@ -52,8 +53,9 @@ def sample(rank, world_size, cfg, port):
     optimizer = losses.get_optimizer(cfg, chain(score_model.parameters(), noise.parameters()))
     scaler = torch.cuda.amp.GradScaler()
 
+    # pass by reference here, model checkpoint is restored  
     state = dict(optimizer=optimizer, scaler=scaler, model=score_model, noise=noise, ema=ema, step=0)
-    print(state)
+    # print(state)
     state = utils.restore_checkpoint(checkpoint_meta_dir, state, device)
 
     tokenizer = GPT2TokenizerFast.from_pretrained('gpt2')
@@ -64,7 +66,7 @@ def sample(rank, world_size, cfg, port):
     sampling_fn = sampling.get_sampling_fn(cfg, graph, noise, sampling_shape, sampling_eps, device)
 
     step = state['step']
-    print(f"Generating samples at step: {step}")
+    # print(f"Generating samples at step: {step}")
 
     # this_sample_dir = os.path.join(sample_dir, f"iter_{step}")
     # utils.makedirs(this_sample_dir)
@@ -74,9 +76,12 @@ def sample(rank, world_size, cfg, port):
     sample = sampling_fn(score_model)
     ema.restore(score_model.parameters())
 
+    torch.save(sample, 'sample.pt')
     sentences = tokenizer.batch_decode(sample)
+    breakpoint()
     for i, sentence in enumerate(sentences):
-        print(f"Sample {i}:\n{sentence}\n{'='*80}")
+        # print(f"Sample {i}:\n{sentence}\n{'='*80}")
+        print(sentence)
 
     # file_name = os.path.join(this_sample_dir, f"sample_{rank}.txt")
     # with open(file_name, 'w') as file:
@@ -102,7 +107,7 @@ def sample(rank, world_size, cfg, port):
             total_perplexity /= num_batches
             dist.all_reduce(total_perplexity)
             total_perplexity /= world_size
-            print(f"Generative Perplexity at step {step}: {total_perplexity:.3f}")
+            # print(f"Generative Perplexity at step {step}: {total_perplexity:.3f}")
 
     cleanup()
 
