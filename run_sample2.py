@@ -131,10 +131,42 @@ def calculate_green_matches(recovered_tokens):
     percent_match = (matches / total) * 100
     return percent_match
 
+def calculate_green_matches_no_index(recovered_tokens):
+    vocab_size = 50257 
+    sequence_length = recovered_tokens.shape[1]
+    max_match_percent = 0
+    best_start = 0
+    
+    n = 5
+    match_arr = []
+    for start in range(0, n): 
+        matches = 0        
+        for pos in range(sequence_length):
+            torch.manual_seed((pos+start) % n) 
+            pos_green_mask = torch.randint(0, 2, (vocab_size,), device=recovered_tokens.device)
+            
+            token = recovered_tokens[0, pos]  
+            
+            if pos_green_mask[token] == 1:
+                matches += 1
+        
+        percent_match = (matches / sequence_length) * 100
+        match_arr.append([start, percent_match])
+        if percent_match > max_match_percent:
+            max_match_percent = percent_match
+            best_start = start
+    
+    return max_match_percent, best_start, match_arr
+
 if __name__ == "__main__":
     root_dir = '/home/avbagchi_umass_edu/Score-Entropy-Discrete-Diffusion/configs'
     cfg = utils.load_hydra_config_from_run(root_dir, True)
-    for amplification in np.arange(0, 5.5, 0.5):
-        sample_text, perplexity = sample(amplification, rank=0, world_size=1, cfg=cfg, port=29500)
-        percent_green_matches = calculate_green_matches(sample_text)
-        print([amplification, percent_green_matches, perplexity.item()])
+    # for amplification in np.arange(0, 5.5, 0.5):
+    amplification = 20
+    sample_text, perplexity = sample(amplification, rank=0, world_size=1, cfg=cfg, port=29500)
+    # percent_green_matches = calculate_green_matches(sample_text)
+    breakpoint()
+    max_percent_no_index, best_start_no_index, match_arr = calculate_green_matches_no_index(sample_text)
+    print([max_percent_no_index, best_start_no_index])
+    print(match_arr)
+    # print([amplification, percent_green_matches, max_percent, best_n, perplexity.item()])

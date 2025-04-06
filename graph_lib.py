@@ -89,6 +89,7 @@ class Graph(abc.ABC):
             
             green_masks = []
             for pos in range(sequence_length):
+                n = 5
                 torch.manual_seed(pos)  # Seed based on position
                 pos_green_mask = torch.randint(0, 2, (vocab_size,), device=score.device)
                 green_masks.append(pos_green_mask)
