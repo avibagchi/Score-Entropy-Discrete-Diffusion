@@ -78,26 +78,26 @@ class Graph(abc.ABC):
         return sample_categorical(transition_vector, method="hard")
     
 
-    def reverse_rate(self, i, score):
+    def reverse_rate(self, amplification, i, score):
         """
         Constructs the reverse rate. Which is score * transp_rate
         """
-        # added this 
-        vocab_size = score.shape[-1]
-        sequence_length = score.shape[1]  # 1024
-        
-        green_masks = []
-        for pos in range(sequence_length):
-            torch.manual_seed(pos)  # Seed based on position
-            pos_green_mask = torch.randint(0, 2, (vocab_size,), device=score.device)
-            green_masks.append(pos_green_mask)
-        
-        green_mask = torch.stack(green_masks, dim=0)
-        green_mask = green_mask.unsqueeze(0) 
-        
-        amplification = 100
-        score = score * (1 + green_mask * amplification)
-        # end of added
+        # added this watermark
+        if (amplification > 0):
+            vocab_size = score.shape[-1]
+            sequence_length = score.shape[1]  # 1024
+            
+            green_masks = []
+            for pos in range(sequence_length):
+                torch.manual_seed(pos)  # Seed based on position
+                pos_green_mask = torch.randint(0, 2, (vocab_size,), device=score.device)
+                green_masks.append(pos_green_mask)
+            
+            green_mask = torch.stack(green_masks, dim=0)
+            green_mask = green_mask.unsqueeze(0) 
+            
+            score = score * (1 + green_mask * amplification)
+        # end of added watermark
 
         normalized_rate = self.transp_rate(i) * score
 

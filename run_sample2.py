@@ -13,7 +13,8 @@ from itertools import chain
 import noise_lib
 import graph_lib
 from torch.nn.parallel import DistributedDataParallel as DDP
-
+import sys
+import numpy as np
 
 def setup(rank, world_size, port):
     os.environ["MASTER_ADDR"] = "localhost"
@@ -25,7 +26,7 @@ def cleanup():
     dist.destroy_process_group()
 
 
-def sample(rank, world_size, cfg, port):
+def sample(amplification, rank, world_size, cfg, port):
     # breakpoint()
     setup(rank, world_size, port)
     
@@ -63,7 +64,7 @@ def sample(rank, world_size, cfg, port):
     sampling_eps = 1e-5
     # sampling_shape = (cfg.training.batch_size // cfg.ngpus, cfg.model.length)
     sampling_shape = (1, 1024) # changed here 
-    sampling_fn = sampling.get_sampling_fn(cfg, graph, noise, sampling_shape, sampling_eps, device)
+    sampling_fn = sampling.get_sampling_fn(amplification, cfg, graph, noise, sampling_shape, sampling_eps, device)
 
     step = state['step']
     # print(f"Generating samples at step: {step}")
@@ -76,7 +77,7 @@ def sample(rank, world_size, cfg, port):
     sample = sampling_fn(score_model)
     ema.restore(score_model.parameters())
 
-    torch.save(sample, 'sample.pt')
+    # torch.save(sample, 'sample.pt')
     sentences = tokenizer.batch_decode(sample)
     breakpoint()
     for i, sentence in enumerate(sentences):
@@ -107,12 +108,33 @@ def sample(rank, world_size, cfg, port):
             total_perplexity /= num_batches
             dist.all_reduce(total_perplexity)
             total_perplexity /= world_size
-            # print(f"Generative Perplexity at step {step}: {total_perplexity:.3f}")
+            print(f"Generative Perplexity at step {step}: {total_perplexity:.3f}")
 
     cleanup()
+    return sample, total_perplexity
 
+def calculate_green_matches(recovered_tokens):
+    vocab_size = 50257 
+    sequence_length = recovered_tokens.shape[1]  
+    matches = 0
+    total = sequence_length  
+    
+    for pos in range(sequence_length):
+        torch.manual_seed(pos)
+        pos_green_mask = torch.randint(0, 2, (vocab_size,), device=recovered_tokens.device)
+        
+        token = recovered_tokens[0, pos]  # [0] because batch size is 1
+        
+        if pos_green_mask[token] == 1:
+            matches += 1
+    
+    percent_match = (matches / total) * 100
+    return percent_match
 
 if __name__ == "__main__":
     root_dir = '/home/avbagchi_umass_edu/Score-Entropy-Discrete-Diffusion/configs'
     cfg = utils.load_hydra_config_from_run(root_dir, True)
-    sample(rank=0, world_size=1, cfg=cfg, port=29500)
+    for amplification in np.arange(0, 5.5, 0.5):
+        sample_text, perplexity = sample(amplification, rank=0, world_size=1, cfg=cfg, port=29500)
+        percent_green_matches = calculate_green_matches(sample_text)
+        print([amplification, percent_green_matches, perplexity.item()])

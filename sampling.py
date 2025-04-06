@@ -59,12 +59,12 @@ class Predictor(abc.ABC):
 # change this
 @register_predictor(name="euler")
 class EulerPredictor(Predictor):
-    def update_fn(self, score_fn, x, t, step_size):
+    def update_fn(self, amplification, score_fn, x, t, step_size):
         # breakpoint()
         sigma, dsigma = self.noise(t)
         score = score_fn(x, sigma)
 
-        rev_rate = step_size * dsigma[..., None] * self.graph.reverse_rate(x, score)
+        rev_rate = step_size * dsigma[..., None] * self.graph.reverse_rate(amplification, x, score)
         x = self.graph.sample_rate(x, rev_rate)
         # breakpoint()
         return x
@@ -109,9 +109,9 @@ class Denoiser:
         return sample_categorical(probs) # random choice from probs, need to change this
                        
 
-def get_sampling_fn(config, graph, noise, batch_dims, eps, device):
+def get_sampling_fn(amplification, config, graph, noise, batch_dims, eps, device):
     
-    sampling_fn = get_pc_sampler(graph=graph,
+    sampling_fn = get_pc_sampler(amplification=amplification, graph=graph,
                                  noise=noise,
                                  batch_dims=batch_dims,
                                  predictor=config.sampling.predictor,
@@ -123,7 +123,7 @@ def get_sampling_fn(config, graph, noise, batch_dims, eps, device):
     return sampling_fn
     
 
-def get_pc_sampler(graph, noise, batch_dims, predictor, steps, denoise=True, eps=1e-5, device=torch.device('cpu'), proj_fun=lambda x: x):
+def get_pc_sampler(amplification, graph, noise, batch_dims, predictor, steps, denoise=True, eps=1e-5, device=torch.device('cpu'), proj_fun=lambda x: x):
     predictor = get_predictor(predictor)(graph, noise)
     projector = proj_fun
     denoiser = Denoiser(graph, noise)
@@ -172,7 +172,7 @@ def get_pc_sampler(graph, noise, batch_dims, predictor, steps, denoise=True, eps
         for i in range(steps):
             t = timesteps[i] * torch.ones(x.shape[0], 1, device=device)
             x = projector(x)
-            x = predictor.update_fn(sampling_score_fn, x, t, dt) # calls euler's predictor
+            x = predictor.update_fn(amplification, sampling_score_fn, x, t, dt) # calls euler's predictor
         # END ODE HERE
             
         # breakpoint()
