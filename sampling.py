@@ -59,14 +59,16 @@ class Predictor(abc.ABC):
 # change this
 @register_predictor(name="euler")
 class EulerPredictor(Predictor):
-    def update_fn(self, amplification, score_fn, x, t, step_size):
-        # breakpoint()
+    def update_fn(self, score_fn, x, t, step_size, amplification=0):
         sigma, dsigma = self.noise(t)
         score = score_fn(x, sigma)
-
+        
+        # Ensure score has the correct dimension
+        # if score.shape[-1] != self.graph.dim:
+        #     score = score[..., :self.graph.dim]
+            
         rev_rate = step_size * dsigma[..., None] * self.graph.reverse_rate(amplification, x, score)
         x = self.graph.sample_rate(x, rev_rate)
-        # breakpoint()
         return x
 
 @register_predictor(name="none")
@@ -77,7 +79,7 @@ class NonePredictor(Predictor):
 
 @register_predictor(name="analytic")
 class AnalyticPredictor(Predictor):
-    def update_fn(self, score_fn, x, t, step_size):
+    def update_fn(self, score_fn, x, t, step_size, amplification=0):
         curr_sigma = self.noise(t)[0]
         next_sigma = self.noise(t - step_size)[0]
         dsigma = curr_sigma - next_sigma
@@ -86,6 +88,16 @@ class AnalyticPredictor(Predictor):
 
         stag_score = self.graph.staggered_score(score, dsigma)
         probs = stag_score * self.graph.transp_transition(x, dsigma)
+
+        if amplification > 0:
+            print(f"Amplifying...{amplification}")
+            watermark_mask = torch.zeros_like(probs)
+            target_token_idx = 2000  # Change this to match the index you want to amplify
+            watermark_mask[..., target_token_idx] = 1.0
+            
+            probs = probs * (1 + watermark_mask * amplification)
+            probs = probs / probs.sum(dim=-1, keepdim=True)
+
         return sample_categorical(probs)
 
     
@@ -132,8 +144,9 @@ def get_pc_sampler(amplification, graph, noise, batch_dims, predictor, steps, de
     def pc_sampler(model):
         sampling_score_fn = mutils.get_score_fn(model, train=False, sampling=True)
         
-        # added this
-        watermark = False # changed to false 
+       
+        # inital noise vector watermark (does not work)
+        watermark = False 
 
         if watermark:
             import prc
@@ -142,7 +155,7 @@ def get_pc_sampler(amplification, graph, noise, batch_dims, predictor, steps, de
             encoding_key, _ = prc.KeyGen(n=n)   
             encoded_watermark = prc.Encode(encoding_key, message)  
             encoded_watermark = encoded_watermark.to(device)
-            x = torch.clamp(encoded_watermark.reshape(*batch_dims).to(device).long(), 0, 1)
+            x = torch.clamp(encoded_watermark.reshape(*batch_dims).to(device).long(), 0, 50256)  # Changed to match vocab size
             x = torch.full(encoded_watermark.reshape(*batch_dims).shape, 3000, device=device, dtype=torch.long)
             # breakpoint()
             # x = torch.full((1,1024),50521) # change here 
@@ -158,7 +171,7 @@ def get_pc_sampler(amplification, graph, noise, batch_dims, predictor, steps, de
         else:
             x = graph.sample_limit(*batch_dims).to(device)
         
-        # breakpoint()
+        # end initial noise vector watermark
             
         torch.save(x, 'initial_noise_2.pt')
         # end added this 
@@ -168,12 +181,11 @@ def get_pc_sampler(amplification, graph, noise, batch_dims, predictor, steps, de
         timesteps = torch.linspace(1, eps, steps + 1, device=device)
         dt = (1 - eps) / steps
 
-        # ODE HERE
         for i in range(steps):
             t = timesteps[i] * torch.ones(x.shape[0], 1, device=device)
             x = projector(x)
-            x = predictor.update_fn(amplification, sampling_score_fn, x, t, dt) # calls euler's predictor
-        # END ODE HERE
+            current_amplification = amplification if i >= steps - 20 else 0
+            x = predictor.update_fn(sampling_score_fn, x, t, dt, current_amplification)
             
         # breakpoint()
         if denoise:

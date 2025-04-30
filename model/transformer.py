@@ -235,7 +235,7 @@ class SEDD(nn.Module, PyTorchModelHubMixin):
         self.config = config
 
         self.absorb = config.graph.type == "absorb"
-        self.uniform = config.graph.type = "uniform" # changed
+        self.uniform = config.graph.type == "uniform"  # Fixed comparison
 
         vocab_size = config.tokens + (1 if self.absorb else 0)
 

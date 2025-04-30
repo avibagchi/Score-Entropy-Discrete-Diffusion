@@ -20,7 +20,15 @@ def main():
     model, graph, noise = load_model(args.model_path, device)
     tokenizer = GPT2TokenizerFast.from_pretrained('gpt2')
 
-    sampling_fn = sampling.get_pc_sampler(
+    # Print token at specific index
+    # 2000 = mind
+    target_token_idx = 2000  # Change this to the index you want to amplify
+    print(f"Token at index {target_token_idx}: {tokenizer.decode([target_token_idx])}")
+    # breakpoint()
+
+    # added first amplification argument
+    amplification = 100000
+    sampling_fn = sampling.get_pc_sampler(amplification,
         graph, noise, (args.batch_size, 1024), 'analytic', args.steps, device=device
     )
 

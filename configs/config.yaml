@@ -15,7 +15,7 @@ model:
   scale_by_sigma: False # change this
   dropout: 0.1
   ngpus: 1
-  tokens: 50257 # changed from 50257
+  tokens: 50257 # changed from 50257 in tinystories case
 
 name: small
 type: ddit
@@ -27,7 +27,7 @@ n_heads: 12
 scale_by_sigma: False # change this 
 dropout: 0.1
 ngpus: 1
-tokens: 50257 # changed from 50257
+tokens: 50257 # changed from 50257 in tinystories case
 
 training:
   batch_size: 64 # changed from 512
@@ -47,7 +47,7 @@ data:
   cache_dir: /scratch3/workspace/avbagchi_umass_edu-data_center/uniform
 
 graph:
-  type: uniform # changed from absorb
+  type: absorb # changed from uniform
   file: data
   report_all: False
 
