@@ -85,7 +85,7 @@ def main():
     # breakpoint()
 
     # added first amplification argument
-    amplification = 10
+    amplification = 5
     sampling_fn = sampling.get_pc_sampler(amplification,
         graph, noise, (args.batch_size, 1024), 'analytic', args.steps, device=device
     )

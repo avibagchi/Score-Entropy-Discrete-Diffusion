@@ -85,6 +85,7 @@ class AnalyticPredictor(Predictor):
         dsigma = curr_sigma - next_sigma
 
         score = score_fn(x, curr_sigma)
+        # breakpoint()
 
 
         # if amplification > 0:
@@ -92,6 +93,25 @@ class AnalyticPredictor(Predictor):
         #     target_token_idx = 2000
         #     watermark_mask[..., target_token_idx] = 1.0
         #     score = score * (1 + watermark_mask * amplification)
+
+        # pass green list in as param
+        if (amplification > 0):
+            vocab_size = score.shape[-1]
+            sequence_length = score.shape[1]  # 1024
+            
+            green_masks = []
+            for pos in range(sequence_length):
+                n = 10
+                torch.manual_seed(pos % n)  # Seed based on position
+                pos_green_mask = torch.randint(0, 2, (vocab_size,), device=score.device)
+                green_masks.append(pos_green_mask)
+            
+            green_mask = torch.stack(green_masks, dim=0)
+            green_mask = green_mask.unsqueeze(0)
+            # indices = torch.arange(1024).to(score.device)
+            # green_mask[:,torch.concat((indices[None,:],x),dim=0).to('cpu')] = 0
+            
+            score = score * (1 + green_mask * amplification)
 
         stag_score = self.graph.staggered_score(score, dsigma)
         probs = stag_score * self.graph.transp_transition(x, dsigma)
@@ -105,21 +125,21 @@ class AnalyticPredictor(Predictor):
         #     probs = probs * (1 + watermark_mask * amplification)
         #     probs = probs / probs.sum(dim=-1, keepdim=True)
 
-        if (amplification > 0):
-            vocab_size = probs.shape[-1]
-            sequence_length = probs.shape[1]  # 1024
+        # if (amplification > 0):
+        #     vocab_size = probs.shape[-1]
+        #     sequence_length = probs.shape[1]  # 1024
             
-            green_masks = []
-            for pos in range(sequence_length):
-                n = 5
-                torch.manual_seed(pos % n)  # Seed based on position
-                pos_green_mask = torch.randint(0, 2, (vocab_size,), device=probs.device)
-                green_masks.append(pos_green_mask)
+        #     green_masks = []
+        #     for pos in range(sequence_length):
+        #         n = 5
+        #         torch.manual_seed(pos % n)  # Seed based on position
+        #         pos_green_mask = torch.randint(0, 2, (vocab_size,), device=probs.device)
+        #         green_masks.append(pos_green_mask)
             
-            green_mask = torch.stack(green_masks, dim=0)
-            green_mask = green_mask.unsqueeze(0) 
+        #     green_mask = torch.stack(green_masks, dim=0)
+        #     green_mask = green_mask.unsqueeze(0) 
             
-            probs = probs * (1 + green_mask * amplification)
+        #     probs = probs * (1 + green_mask * amplification)
 
         return sample_categorical(probs)
 
@@ -205,7 +225,7 @@ def get_pc_sampler(amplification, graph, noise, batch_dims, predictor, steps, de
         dt = (1 - eps) / steps
 
         for i in range(steps):
-            # if i == 0:
+            # if i == 400:
             #     breakpoint()
             # elif i == 100:
             #     breakpoint()
