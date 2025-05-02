@@ -86,17 +86,40 @@ class AnalyticPredictor(Predictor):
 
         score = score_fn(x, curr_sigma)
 
+
+        # if amplification > 0:
+        #     watermark_mask = torch.zeros_like(score)
+        #     target_token_idx = 2000
+        #     watermark_mask[..., target_token_idx] = 1.0
+        #     score = score * (1 + watermark_mask * amplification)
+
         stag_score = self.graph.staggered_score(score, dsigma)
         probs = stag_score * self.graph.transp_transition(x, dsigma)
 
-        if amplification > 0:
-            print(f"Amplifying...{amplification}")
-            watermark_mask = torch.zeros_like(probs)
-            target_token_idx = 2000  # Change this to match the index you want to amplify
-            watermark_mask[..., target_token_idx] = 1.0
+        # if amplification > 0:
+        #     print(f"Amplifying...{amplification}")
+        #     watermark_mask = torch.zeros_like(probs)
+        #     target_token_idx = 2000  # Change this to match the index you want to amplify
+        #     watermark_mask[..., target_token_idx] = 1.0
             
-            probs = probs * (1 + watermark_mask * amplification)
-            probs = probs / probs.sum(dim=-1, keepdim=True)
+        #     probs = probs * (1 + watermark_mask * amplification)
+        #     probs = probs / probs.sum(dim=-1, keepdim=True)
+
+        if (amplification > 0):
+            vocab_size = probs.shape[-1]
+            sequence_length = probs.shape[1]  # 1024
+            
+            green_masks = []
+            for pos in range(sequence_length):
+                n = 5
+                torch.manual_seed(pos % n)  # Seed based on position
+                pos_green_mask = torch.randint(0, 2, (vocab_size,), device=probs.device)
+                green_masks.append(pos_green_mask)
+            
+            green_mask = torch.stack(green_masks, dim=0)
+            green_mask = green_mask.unsqueeze(0) 
+            
+            probs = probs * (1 + green_mask * amplification)
 
         return sample_categorical(probs)
 
@@ -182,9 +205,38 @@ def get_pc_sampler(amplification, graph, noise, batch_dims, predictor, steps, de
         dt = (1 - eps) / steps
 
         for i in range(steps):
+            # if i == 0:
+            #     breakpoint()
+            # elif i == 100:
+            #     breakpoint()
+            # elif i == 200:
+            #     breakpoint()
+            # elif i == 300:
+            #     breakpoint()
+            # elif i == 400:
+            #     breakpoint()
+            # elif i == 500:
+            #     breakpoint()
+            # elif i == 600:
+            #     breakpoint()
+            # elif i == 700:
+            #     breakpoint()
+            # elif i == 800:
+            #     breakpoint()
+            # elif i == 900:
+            #     breakpoint()
+            # elif i == 1000:
+            #     breakpoint()
+            # elif i == 1024:
+            #     breakpoint()
+                
             t = timesteps[i] * torch.ones(x.shape[0], 1, device=device)
             x = projector(x)
-            current_amplification = amplification if i >= steps - 20 else 0
+            if i <= steps:
+                current_amplification = amplification 
+            else:
+                current_amplification = 0
+            # breakpoint()
             x = predictor.update_fn(sampling_score_fn, x, t, dt, current_amplification)
             
         # breakpoint()

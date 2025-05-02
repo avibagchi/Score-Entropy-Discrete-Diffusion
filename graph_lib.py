@@ -252,6 +252,7 @@ class Absorbing(Graph):
             1 - (-sigma).squeeze(-1).exp(),
             0
         )[..., None]
+        # breakpoint()
         return edge
 
     def sample_transition(self, i, sigma):
