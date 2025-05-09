@@ -79,67 +79,19 @@ class NonePredictor(Predictor):
 
 @register_predictor(name="analytic")
 class AnalyticPredictor(Predictor):
-    def update_fn(self, score_fn, x, t, step_size, amplification=0):
+    def update_fn(self, score_fn, x, t, step_size, green_mask, amplification=0):
         curr_sigma = self.noise(t)[0]
         next_sigma = self.noise(t - step_size)[0]
         dsigma = curr_sigma - next_sigma
 
         score = score_fn(x, curr_sigma)
-        # breakpoint()
 
-
-        # if amplification > 0:
-        #     watermark_mask = torch.zeros_like(score)
-        #     target_token_idx = 2000
-        #     watermark_mask[..., target_token_idx] = 1.0
-        #     score = score * (1 + watermark_mask * amplification)
-
-        # pass green list in as param
         if (amplification > 0):
-            vocab_size = score.shape[-1]
-            sequence_length = score.shape[1]  # 1024
-            
-            green_masks = []
-            for pos in range(sequence_length):
-                n = 10
-                torch.manual_seed(pos % n)  # Seed based on position
-                pos_green_mask = torch.randint(0, 2, (vocab_size,), device=score.device)
-                green_masks.append(pos_green_mask)
-            
-            green_mask = torch.stack(green_masks, dim=0)
-            green_mask = green_mask.unsqueeze(0)
-            # indices = torch.arange(1024).to(score.device)
-            # green_mask[:,torch.concat((indices[None,:],x),dim=0).to('cpu')] = 0
-            
+            green_mask = green_mask.to(score.device)
             score = score * (1 + green_mask * amplification)
 
         stag_score = self.graph.staggered_score(score, dsigma)
         probs = stag_score * self.graph.transp_transition(x, dsigma)
-
-        # if amplification > 0:
-        #     print(f"Amplifying...{amplification}")
-        #     watermark_mask = torch.zeros_like(probs)
-        #     target_token_idx = 2000  # Change this to match the index you want to amplify
-        #     watermark_mask[..., target_token_idx] = 1.0
-            
-        #     probs = probs * (1 + watermark_mask * amplification)
-        #     probs = probs / probs.sum(dim=-1, keepdim=True)
-
-        # if (amplification > 0):
-        #     vocab_size = probs.shape[-1]
-        #     sequence_length = probs.shape[1]  # 1024
-            
-        #     green_masks = []
-        #     for pos in range(sequence_length):
-        #         n = 5
-        #         torch.manual_seed(pos % n)  # Seed based on position
-        #         pos_green_mask = torch.randint(0, 2, (vocab_size,), device=probs.device)
-        #         green_masks.append(pos_green_mask)
-            
-        #     green_mask = torch.stack(green_masks, dim=0)
-        #     green_mask = green_mask.unsqueeze(0) 
-            
-        #     probs = probs * (1 + green_mask * amplification)
 
         return sample_categorical(probs)
 
@@ -178,7 +130,7 @@ def get_sampling_fn(amplification, config, graph, noise, batch_dims, eps, device
     return sampling_fn
     
 
-def get_pc_sampler(amplification, graph, noise, batch_dims, predictor, steps, denoise=True, eps=1e-5, device=torch.device('cpu'), proj_fun=lambda x: x):
+def get_pc_sampler(amplification, green_mask, step_to_watermark, graph, noise, batch_dims, predictor, steps, denoise=True, eps=1e-5, device=torch.device('cpu'), proj_fun=lambda x: x):
     predictor = get_predictor(predictor)(graph, noise)
     projector = proj_fun
     denoiser = Denoiser(graph, noise)
@@ -200,64 +152,22 @@ def get_pc_sampler(amplification, graph, noise, batch_dims, predictor, steps, de
             encoded_watermark = encoded_watermark.to(device)
             x = torch.clamp(encoded_watermark.reshape(*batch_dims).to(device).long(), 0, 50256)  # Changed to match vocab size
             x = torch.full(encoded_watermark.reshape(*batch_dims).shape, 3000, device=device, dtype=torch.long)
-            # breakpoint()
-            # x = torch.full((1,1024),50521) # change here 
-            
-            # print(x)
-            # y = graph.sample_limit(*batch_dims).to(device)
-            # print(y) # can delete this
-            # breakpoint()
-            # x = torch.sigmoid(encoded_watermark.reshape(*batch_dims).to(device).long())
-            # x = (encoded_watermark.reshape(*batch_dims).to(device).float() - encoded_watermark.min()) / (encoded_watermark.max() - encoded_watermark.min())
-
-            # make uniformly distributed between 0 and 1
         else:
             x = graph.sample_limit(*batch_dims).to(device)
         
         # end initial noise vector watermark
-            
-        torch.save(x, 'initial_noise_2.pt')
-        # end added this 
-
-        # print("init state...")
-        # print(x)
         timesteps = torch.linspace(1, eps, steps + 1, device=device)
         dt = (1 - eps) / steps
 
-        for i in range(steps):
-            # if i == 400:
-            #     breakpoint()
-            # elif i == 100:
-            #     breakpoint()
-            # elif i == 200:
-            #     breakpoint()
-            # elif i == 300:
-            #     breakpoint()
-            # elif i == 400:
-            #     breakpoint()
-            # elif i == 500:
-            #     breakpoint()
-            # elif i == 600:
-            #     breakpoint()
-            # elif i == 700:
-            #     breakpoint()
-            # elif i == 800:
-            #     breakpoint()
-            # elif i == 900:
-            #     breakpoint()
-            # elif i == 1000:
-            #     breakpoint()
-            # elif i == 1024:
-            #     breakpoint()
-                
+        for i in range(steps):     
             t = timesteps[i] * torch.ones(x.shape[0], 1, device=device)
             x = projector(x)
-            if i <= steps:
+            if i <= step_to_watermark:
                 current_amplification = amplification 
             else:
                 current_amplification = 0
             # breakpoint()
-            x = predictor.update_fn(sampling_score_fn, x, t, dt, current_amplification)
+            x = predictor.update_fn(sampling_score_fn, x, t, dt, green_mask, current_amplification)
             
         # breakpoint()
         if denoise:

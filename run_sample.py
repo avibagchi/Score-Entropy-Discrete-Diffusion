@@ -71,7 +71,6 @@ def main():
     parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--steps", type=int, default=1024)
     args = parser.parse_args()
-    setup(0, 1, 29500)
 
     
     device = torch.device('cuda')
@@ -85,40 +84,70 @@ def main():
     # breakpoint()
 
     # added first amplification argument
-    amplification = 5
-    sampling_fn = sampling.get_pc_sampler(amplification,
-        graph, noise, (args.batch_size, 1024), 'analytic', args.steps, device=device
-    )
-
-    samples = sampling_fn(model)
-
-    text_samples = tokenizer.batch_decode(samples)
-    for i in text_samples:
-        print(i)
-        print("=================================================")
+    amplification = 100
+    vocab_size = 50258
+    sequence_length = 1024
     
+    green_masks = []
+    for pos in range(sequence_length):
+        n = 10
+        torch.manual_seed(pos % n)  # Seed based on position
+        pos_green_mask = torch.randint(0, 2, (vocab_size,), device=device)
+        green_masks.append(pos_green_mask)
     
-    with torch.no_grad():
-        eval_model = GPT2LMHeadModel.from_pretrained("gpt2-large").to(device).eval()
-        total_perplexity = 0
-        batch_size = 1
-        num_batches = samples.shape[0] // batch_size
+    green_mask = torch.stack(green_masks, dim=0)
+    green_mask = green_mask.unsqueeze(0)
 
-        for i in range(num_batches):
-            s = samples[i * batch_size:(i + 1) * batch_size]
-            loss, logits = eval_model(s, labels=s)[:2]
-            logits = logits.transpose(-1, -2)
-            perplexity = F.cross_entropy(logits[..., :-1], s[..., 1:], reduction="none").mean(dim=-1).exp().mean()
-            total_perplexity += perplexity
+    water_data_arr = []
+    for step_to_watermark in range(0, 1074, 50):
+        setup(0, 1, 29500)
+        sampling_fn = sampling.get_pc_sampler(amplification, green_mask, step_to_watermark,
+            graph, noise, (args.batch_size, 1024), 'analytic', args.steps, device=device
+        )
 
-        total_perplexity /= num_batches
-        dist.all_reduce(total_perplexity)
-        print(f"Generative Perplexity at step: {total_perplexity:.3f}")
+        samples = sampling_fn(model)
+
+        text_samples = tokenizer.batch_decode(samples)
+        for i in text_samples:
+            print(i)
+            print("=================================================")
+        
+        
+        with torch.no_grad():
+            eval_model = GPT2LMHeadModel.from_pretrained("gpt2-large").to(device).eval()
+            total_perplexity = 0
+            batch_size = 1
+            num_batches = samples.shape[0] // batch_size
+
+            for i in range(num_batches):
+                s = samples[i * batch_size:(i + 1) * batch_size]
+                loss, logits = eval_model(s, labels=s)[:2]
+                logits = logits.transpose(-1, -2)
+                perplexity = F.cross_entropy(logits[..., :-1], s[..., 1:], reduction="none").mean(dim=-1).exp().mean()
+                total_perplexity += perplexity
+
+            total_perplexity /= num_batches
+            dist.all_reduce(total_perplexity)
+            print(f"Generative Perplexity at step: {total_perplexity:.3f}")
     
-    # breakpoint()
-    max_match_percent, best_start, match_arr = calculate_green_matches_no_index(samples)
-    print(f"Percent match: {max_match_percent}")
-    cleanup()
+        # breakpoint()
+        max_match_percent, best_start, match_arr = calculate_green_matches_no_index(samples)
+        print(f"Percent match: {max_match_percent}")
+        water_data = {
+            "amplification": amplification,
+            "step_to_watermark": step_to_watermark,
+            "max_match_percent": max_match_percent,
+            "perplexity": float(total_perplexity.item()),
+        }
+        print(f"Water data: {water_data}")
+        water_data_arr.append(water_data)
+
+        cleanup()
+
+    # save water_data_arr to json
+    import json
+    with open('water_data_arr.json', 'w') as f:
+        json.dump(water_data_arr, f)
 
 if __name__=="__main__":
     main()
