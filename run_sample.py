@@ -77,20 +77,14 @@ def main():
     model, graph, noise = load_model(args.model_path, device)
     tokenizer = GPT2TokenizerFast.from_pretrained('gpt2')
 
-    # Print token at specific index
-    # 2000 = mind
-    target_token_idx = 2000  # Change this to the index you want to amplify
-    print(f"Token at index {target_token_idx}: {tokenizer.decode([target_token_idx])}")
-    # breakpoint()
 
-    # added first amplification argument
-    amplification = 100
+    # amplification = 1
     vocab_size = 50258
     sequence_length = 1024
     
     green_masks = []
     for pos in range(sequence_length):
-        n = 10
+        n = 5
         torch.manual_seed(pos % n)  # Seed based on position
         pos_green_mask = torch.randint(0, 2, (vocab_size,), device=device)
         green_masks.append(pos_green_mask)
@@ -99,50 +93,51 @@ def main():
     green_mask = green_mask.unsqueeze(0)
 
     water_data_arr = []
-    for step_to_watermark in range(0, 1074, 50):
-        setup(0, 1, 29500)
-        sampling_fn = sampling.get_pc_sampler(amplification, green_mask, step_to_watermark,
-            graph, noise, (args.batch_size, 1024), 'analytic', args.steps, device=device
-        )
+    for amplification in range(1, 11, 1):
+        for step_to_watermark in range(0, 1025, 50):
+            setup(0, 1, 29500)
+            sampling_fn = sampling.get_pc_sampler(amplification, green_mask, step_to_watermark,
+                graph, noise, (args.batch_size, 1024), 'analytic', args.steps, device=device
+            )
 
-        samples = sampling_fn(model)
+            samples = sampling_fn(model)
 
-        text_samples = tokenizer.batch_decode(samples)
-        for i in text_samples:
-            print(i)
-            print("=================================================")
+            text_samples = tokenizer.batch_decode(samples)
+            for i in text_samples:
+                print(i)
+                print("=================================================")
+            
+            
+            with torch.no_grad():
+                eval_model = GPT2LMHeadModel.from_pretrained("gpt2-large").to(device).eval()
+                total_perplexity = 0
+                batch_size = 1
+                num_batches = samples.shape[0] // batch_size
+
+                for i in range(num_batches):
+                    s = samples[i * batch_size:(i + 1) * batch_size]
+                    loss, logits = eval_model(s, labels=s)[:2]
+                    logits = logits.transpose(-1, -2)
+                    perplexity = F.cross_entropy(logits[..., :-1], s[..., 1:], reduction="none").mean(dim=-1).exp().mean()
+                    total_perplexity += perplexity
+
+                total_perplexity /= num_batches
+                dist.all_reduce(total_perplexity)
+                print(f"Generative Perplexity at step: {total_perplexity:.3f}")
         
-        
-        with torch.no_grad():
-            eval_model = GPT2LMHeadModel.from_pretrained("gpt2-large").to(device).eval()
-            total_perplexity = 0
-            batch_size = 1
-            num_batches = samples.shape[0] // batch_size
+            # breakpoint()
+            max_match_percent, best_start, match_arr = calculate_green_matches_no_index(samples)
+            print(f"Percent match: {max_match_percent}")
+            water_data = {
+                "amplification": amplification,
+                "step_to_watermark": step_to_watermark,
+                "max_match_percent": max_match_percent,
+                "perplexity": float(total_perplexity.item()),
+            }
+            print(f"Water data: {water_data}")
+            water_data_arr.append(water_data)
 
-            for i in range(num_batches):
-                s = samples[i * batch_size:(i + 1) * batch_size]
-                loss, logits = eval_model(s, labels=s)[:2]
-                logits = logits.transpose(-1, -2)
-                perplexity = F.cross_entropy(logits[..., :-1], s[..., 1:], reduction="none").mean(dim=-1).exp().mean()
-                total_perplexity += perplexity
-
-            total_perplexity /= num_batches
-            dist.all_reduce(total_perplexity)
-            print(f"Generative Perplexity at step: {total_perplexity:.3f}")
-    
-        # breakpoint()
-        max_match_percent, best_start, match_arr = calculate_green_matches_no_index(samples)
-        print(f"Percent match: {max_match_percent}")
-        water_data = {
-            "amplification": amplification,
-            "step_to_watermark": step_to_watermark,
-            "max_match_percent": max_match_percent,
-            "perplexity": float(total_perplexity.item()),
-        }
-        print(f"Water data: {water_data}")
-        water_data_arr.append(water_data)
-
-        cleanup()
+            cleanup()
 
     # save water_data_arr to json
     import json

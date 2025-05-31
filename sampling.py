@@ -158,7 +158,7 @@ def get_pc_sampler(amplification, green_mask, step_to_watermark, graph, noise, b
         # end initial noise vector watermark
         timesteps = torch.linspace(1, eps, steps + 1, device=device)
         dt = (1 - eps) / steps
-
+        
         for i in range(steps):     
             t = timesteps[i] * torch.ones(x.shape[0], 1, device=device)
             x = projector(x)
