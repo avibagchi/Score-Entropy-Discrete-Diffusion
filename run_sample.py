@@ -59,7 +59,7 @@ def calculate_green_matches_no_index(recovered_tokens):
         if percent_match > max_match_percent:
             max_match_percent = percent_match
             best_start = start
-    
+    breakpoint()
     return max_match_percent, best_start, match_arr
 
 
@@ -93,7 +93,8 @@ def main():
     green_mask = green_mask.unsqueeze(0)
 
     water_data_arr = []
-    for amplification in range(1, 11, 1):
+    amplification_arr = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000]
+    for amplification in amplification_arr:
         for step_to_watermark in range(0, 1025, 50):
             setup(0, 1, 29500)
             sampling_fn = sampling.get_pc_sampler(amplification, green_mask, step_to_watermark,
@@ -136,9 +137,10 @@ def main():
             }
             print(f"Water data: {water_data}")
             water_data_arr.append(water_data)
-
+            
             cleanup()
-
+            
+        
     # save water_data_arr to json
     import json
     with open('water_data_arr.json', 'w') as f:

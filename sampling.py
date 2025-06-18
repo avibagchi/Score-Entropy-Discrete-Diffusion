@@ -162,7 +162,7 @@ def get_pc_sampler(amplification, green_mask, step_to_watermark, graph, noise, b
         for i in range(steps):     
             t = timesteps[i] * torch.ones(x.shape[0], 1, device=device)
             x = projector(x)
-            if i <= step_to_watermark:
+            if i == step_to_watermark: # changed here
                 current_amplification = amplification 
             else:
                 current_amplification = 0
