@@ -104,10 +104,12 @@ def main():
     # amplification = 1
     vocab_size = 50258
     sequence_length = 1024
-    
+   
+    # change here
     gamma_list = [0.1, 0.25, 0.5, 0.75, 0.9]
-    amplification_arr = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 1000, 10000]
+    amplification_arr = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 500, 1000, 5000, 10000]
 
+    
     for gamma in gamma_list:
         # Generate green masks for this gamma value
         green_masks = []
@@ -128,14 +130,15 @@ def main():
     
         for amplification in amplification_arr:
             # Create a separate file for each gamma and amplification combination
-            filename = f'water_data/gamma_{gamma}_amp_{amplification}.csv'
+            filename = f'fixed_final_water_data/smaller_amp/gamma_{gamma}_amp_{amplification}.csv'
             
-            for step_to_watermark in range(0, 1025, 50):
+            for step_to_watermark in range(0, 1025, 50): # change here: 50
                 setup(0, 1, 29500)
+                torch.manual_seed(42)
                 sampling_fn = sampling.get_pc_sampler(amplification, green_mask, step_to_watermark,
                     graph, noise, (args.batch_size, 1024), 'analytic', args.steps, device=device
                 )
-
+                
                 samples = sampling_fn(model)
 
                 text_samples = tokenizer.batch_decode(samples)
@@ -160,6 +163,8 @@ def main():
                     total_perplexity /= num_batches
                     dist.all_reduce(total_perplexity)
                     print(f"Generative Perplexity at step: {total_perplexity:.3f}")
+
+                cleanup()
             
                 # breakpoint()
                 max_match_percent, actual_length_used, max_num_matches, best_start = calculate_green_matches_no_index(samples, gamma)
@@ -180,8 +185,8 @@ def main():
                 print(f"Water data: {water_data}")
                 water_data_arr.append(water_data)
                 
-                cleanup()
-            
+                
+            # change here
             # Save to CSV file after each amplification iteration
             with open(filename, 'w', newline='') as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=water_data.keys())
