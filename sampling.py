@@ -88,7 +88,9 @@ class AnalyticPredictor(Predictor):
 
         if (amplification > 0):
             green_mask = green_mask.to(score.device)
-            score = score * (1 + green_mask * amplification)
+            # New formula: amplification=1 does nothing, amplification=2 scales by 2
+            score = score * (1 + green_mask * (amplification - 1))
+            
 
         stag_score = self.graph.staggered_score(score, dsigma)
         probs = stag_score * self.graph.transp_transition(x, dsigma)
@@ -141,19 +143,19 @@ def get_pc_sampler(amplification, green_mask, step_to_watermark, graph, noise, b
         
        
         # inital noise vector watermark (does not work)
-        watermark = False 
+        # watermark = False 
 
-        if watermark:
-            import prc
-            n = batch_dims[0] * batch_dims[1]  # change this? 
-            message = prc.str_to_bin("W") # change to one bit  
-            encoding_key, _ = prc.KeyGen(n=n)   
-            encoded_watermark = prc.Encode(encoding_key, message)  
-            encoded_watermark = encoded_watermark.to(device)
-            x = torch.clamp(encoded_watermark.reshape(*batch_dims).to(device).long(), 0, 50256)  # Changed to match vocab size
-            x = torch.full(encoded_watermark.reshape(*batch_dims).shape, 3000, device=device, dtype=torch.long)
-        else:
-            x = graph.sample_limit(*batch_dims).to(device)
+        # if watermark:
+        #     import prc
+        #     n = batch_dims[0] * batch_dims[1]  # change this? 
+        #     message = prc.str_to_bin("W") # change to one bit  
+        #     encoding_key, _ = prc.KeyGen(n=n)   
+        #     encoded_watermark = prc.Encode(encoding_key, message)  
+        #     encoded_watermark = encoded_watermark.to(device)
+        #     x = torch.clamp(encoded_watermark.reshape(*batch_dims).to(device).long(), 0, 50256)  # Changed to match vocab size
+        #     x = torch.full(encoded_watermark.reshape(*batch_dims).shape, 3000, device=device, dtype=torch.long)
+        # else:
+        x = graph.sample_limit(*batch_dims).to(device)
         
         # end initial noise vector watermark
         timesteps = torch.linspace(1, eps, steps + 1, device=device)
@@ -162,7 +164,7 @@ def get_pc_sampler(amplification, green_mask, step_to_watermark, graph, noise, b
         for i in range(steps):     
             t = timesteps[i] * torch.ones(x.shape[0], 1, device=device)
             x = projector(x)
-            if i == step_to_watermark: # changed here
+            if i <= step_to_watermark: # changed here
                 current_amplification = amplification 
             else:
                 current_amplification = 0

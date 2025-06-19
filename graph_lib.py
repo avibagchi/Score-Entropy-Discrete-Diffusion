@@ -83,21 +83,21 @@ class Graph(abc.ABC):
         Constructs the reverse rate. Which is score * transp_rate
         """
         # added this watermark
-        if (amplification > 0):
-            vocab_size = score.shape[-1]
-            sequence_length = score.shape[1]  # 1024
+        # if (amplification > 0):
+        #     vocab_size = score.shape[-1]
+        #     sequence_length = score.shape[1]  # 1024
             
-            green_masks = []
-            for pos in range(sequence_length):
-                n = 5
-                torch.manual_seed(pos % n)  # Seed based on position
-                pos_green_mask = torch.randint(0, 2, (vocab_size,), device=score.device)
-                green_masks.append(pos_green_mask)
+        #     green_masks = []
+        #     for pos in range(sequence_length):
+        #         n = 5
+        #         torch.manual_seed(pos % n)  # Seed based on position
+        #         pos_green_mask = torch.randint(0, 2, (vocab_size,), device=score.device)
+        #         green_masks.append(pos_green_mask)
             
-            green_mask = torch.stack(green_masks, dim=0)
-            green_mask = green_mask.unsqueeze(0) 
+        #     green_mask = torch.stack(green_masks, dim=0)
+        #     green_mask = green_mask.unsqueeze(0) 
             
-            score = score * (1 + green_mask * amplification)
+        #     score = score * (1 + green_mask * amplification)
         # end of added watermark
 
         normalized_rate = self.transp_rate(i) * score
