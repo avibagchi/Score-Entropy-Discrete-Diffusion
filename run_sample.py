@@ -108,9 +108,9 @@ def main():
    
     # change here
     # gamma_list = [0.1, 0.25, 0.5, 0.75, 0.9]
-    gamma_list = [0.1] # [0.9, 0.75, 0.5, 0.25, 0.1]
-    amplification_arr = [1] # [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 500, 1000, 5000, 10000]
-    is_tree_ring = True
+    gamma_list = [0.015] # [0.9, 0.75, 0.5, 0.25, 0.1]
+    amplification_arr = [1, 15] # [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 500, 1000, 5000, 10000]
+    is_tree_ring = False
     
     for gamma in gamma_list:
         # Generate green masks for this gamma value
@@ -132,9 +132,9 @@ def main():
     
         for amplification in amplification_arr:
             # Create a separate file for each gamma and amplification combination
-            for step_to_watermark in range(500, 501, 50): # changed from 0, 1025, 50
-                for model_seed in range(1, 2, 1):
-                    filename = f'optimal_set/seed_{model_seed}_gamma_{gamma}_amp_{amplification}.csv'
+            for step_to_watermark in range(200, 201, 50): # changed from 0, 1025, 50
+                for model_seed in range(0, 300, 1):
+                    filename = f'reduced_gamma/seed_{model_seed}_gamma_{gamma}_amp_{amplification}.csv'
                     setup(0, 1, 29500)
                     torch.manual_seed(model_seed)
                     sampling_fn = sampling.get_pc_sampler(is_tree_ring, amplification, green_mask, step_to_watermark,
@@ -169,36 +169,39 @@ def main():
                     cleanup()
                 
                     # breakpoint()
-                    # max_match_percent, actual_length_used, max_num_matches, best_start = calculate_green_matches_no_index(samples, gamma)
-                    # true_num_green = gamma * actual_length_used
-                    # z_score = (max_num_matches - true_num_green) / math.sqrt(true_num_green * (1-gamma))
-                    # print(f"Percent match: {max_match_percent}")
-                    # water_data = {
-                    #     "model_seed": model_seed,
-                    #     "gamma": gamma,
-                    #     "amplification": amplification,
-                    #     "step_to_watermark": step_to_watermark,
-                    #     "max_match_percent": max_match_percent,
-                    #     "perplexity": float(total_perplexity.item()),
-                    #     "z_score": float(z_score),
-                    #     "actual_length_used": actual_length_used,
-                    #     "max_num_matches": max_num_matches,
-                    #     "best_start": best_start
-                    # }
-                    # print(f"Water data: {water_data}")
-                    # water_data_arr.append(water_data)
+                    max_match_percent, actual_length_used, max_num_matches, best_start = calculate_green_matches_no_index(samples, gamma)
+                    true_num_green = gamma * actual_length_used
+                    if math.sqrt(true_num_green * (1-gamma)) == 0:
+                        z_score = 0
+                    else:
+                        z_score = (max_num_matches - true_num_green) / math.sqrt(true_num_green * (1-gamma))
+                    print(f"Percent match: {max_match_percent}")
+                    water_data = {
+                        "model_seed": model_seed,
+                        "gamma": gamma,
+                        "amplification": amplification,
+                        "step_to_watermark": step_to_watermark,
+                        "max_match_percent": max_match_percent,
+                        "perplexity": float(total_perplexity.item()),
+                        "z_score": float(z_score),
+                        "actual_length_used": actual_length_used,
+                        "max_num_matches": max_num_matches,
+                        "best_start": best_start
+                    }
+                    print(f"Water data: {water_data}")
+                    water_data_arr.append(water_data)
                 
-                    # if model_seed % 30 == 0:
-                    #     # change here
-                    #     # Save to CSV file after each amplification iteration
-                    #     with open(filename, 'w', newline='') as csvfile:
-                    #         writer = csv.DictWriter(csvfile, fieldnames=water_data.keys())
-                    #         writer.writeheader()
-                    #         writer.writerows(water_data_arr)
-                    #     print(f"Saved results to {filename}")
+                    if model_seed % 15 == 0:
+                        # change here
+                        # Save to CSV file after each amplification iteration
+                        with open(filename, 'w', newline='') as csvfile:
+                            writer = csv.DictWriter(csvfile, fieldnames=water_data.keys())
+                            writer.writeheader()
+                            writer.writerows(water_data_arr)
+                        print(f"Saved results to {filename}")
                         
-                    #     # Reset water_data_arr for next amplification
-                    #     water_data_arr = []
+                        # Reset water_data_arr for next amplification
+                        water_data_arr = []
 
 if __name__=="__main__":
     main()

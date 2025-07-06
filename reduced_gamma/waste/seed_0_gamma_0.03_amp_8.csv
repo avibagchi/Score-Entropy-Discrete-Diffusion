@@ -1,0 +1,2 @@
+model_seed,gamma,amplification,step_to_watermark,max_match_percent,perplexity,z_score,actual_length_used,max_num_matches,best_start
+0,0.03,8,350,0.10877626699629171,37.475120544433594,13.134790893276216,809,88,0
