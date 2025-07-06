@@ -130,9 +130,31 @@ def get_sampling_fn(amplification, config, graph, noise, batch_dims, eps, device
                                  device=device)
     
     return sampling_fn
+
+def embed_tree_ring(x, batch_dims, device, mask_radius=4):
+    """Create a watermarked noise vector by modifying the Fourier space."""
+    shape = (*batch_dims,)  # e.g., (batch, seq_len)
+    #x = torch.randn(*shape, device=device)  # Gaussian noise
+
+    # FFT over last dimension (sequence)
+    x_fft = torch.fft.fft(x, dim=-1)
+
+    # Build circular low-frequency mask M
+    seq_len = shape[-1]
+    freqs = torch.fft.fftfreq(seq_len, d=1.0).to(device)
+    mask = torch.abs(freqs) < (mask_radius / seq_len)
+
+    # Create watermark pattern in Fourier space
+    watermark = torch.randn_like(x_fft)
+    x_fft[..., mask] = watermark[..., mask]  # Insert watermark pattern
+
+    # Inverse FFT to real domain
+    x_watermarked = torch.fft.ifft(x_fft, dim=-1).real
+    # breakpoint()
+    return x_watermarked
     
 
-def get_pc_sampler(amplification, green_mask, step_to_watermark, graph, noise, batch_dims, predictor, steps, denoise=True, eps=1e-5, device=torch.device('cpu'), proj_fun=lambda x: x):
+def get_pc_sampler(is_tree_ring, amplification, green_mask, step_to_watermark, graph, noise, batch_dims, predictor, steps, denoise=True, eps=1e-5, device=torch.device('cpu'), proj_fun=lambda x: x):
     predictor = get_predictor(predictor)(graph, noise)
     projector = proj_fun
     denoiser = Denoiser(graph, noise)
@@ -155,7 +177,14 @@ def get_pc_sampler(amplification, green_mask, step_to_watermark, graph, noise, b
         #     x = torch.clamp(encoded_watermark.reshape(*batch_dims).to(device).long(), 0, 50256)  # Changed to match vocab size
         #     x = torch.full(encoded_watermark.reshape(*batch_dims).shape, 3000, device=device, dtype=torch.long)
         # else:
-        x = graph.sample_limit(*batch_dims).to(device)
+        
+        if is_tree_ring:
+            x = graph.sample_limit(*batch_dims).to(device)
+            # breakpoint()
+            x = embed_tree_ring(x, batch_dims, device)  # shape: [B, L]
+            x = torch.clamp(x.round().long(), 0, 50257)
+        else:
+            x = graph.sample_limit(*batch_dims).to(device)
         
         # end initial noise vector watermark
         timesteps = torch.linspace(1, eps, steps + 1, device=device)

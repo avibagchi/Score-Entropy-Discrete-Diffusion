@@ -43,6 +43,7 @@ def calculate_green_matches_no_index(recovered_tokens, gamma=0.5):
     sequence_length = recovered_tokens.shape[1]
     max_match_percent = 0
     best_start = 0
+    actual_length_used = 0  # Initialize this variable
     
     n = 5
     match_arr = []
@@ -106,9 +107,10 @@ def main():
     sequence_length = 1024
    
     # change here
-    gamma_list = [0.1, 0.25, 0.5, 0.75, 0.9]
-    amplification_arr = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 500, 1000, 5000, 10000]
-
+    # gamma_list = [0.1, 0.25, 0.5, 0.75, 0.9]
+    gamma_list = [0.1] # [0.9, 0.75, 0.5, 0.25, 0.1]
+    amplification_arr = [1] # [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 500, 1000, 5000, 10000]
+    is_tree_ring = True
     
     for gamma in gamma_list:
         # Generate green masks for this gamma value
@@ -130,72 +132,73 @@ def main():
     
         for amplification in amplification_arr:
             # Create a separate file for each gamma and amplification combination
-            filename = f'fixed_final_water_data/smaller_amp/gamma_{gamma}_amp_{amplification}.csv'
-            
-            for step_to_watermark in range(0, 1025, 50): # change here: 50
-                setup(0, 1, 29500)
-                torch.manual_seed(42)
-                sampling_fn = sampling.get_pc_sampler(amplification, green_mask, step_to_watermark,
-                    graph, noise, (args.batch_size, 1024), 'analytic', args.steps, device=device
-                )
-                
-                samples = sampling_fn(model)
+            for step_to_watermark in range(500, 501, 50): # changed from 0, 1025, 50
+                for model_seed in range(1, 2, 1):
+                    filename = f'optimal_set/seed_{model_seed}_gamma_{gamma}_amp_{amplification}.csv'
+                    setup(0, 1, 29500)
+                    torch.manual_seed(model_seed)
+                    sampling_fn = sampling.get_pc_sampler(is_tree_ring, amplification, green_mask, step_to_watermark,
+                        graph, noise, (args.batch_size, 1024), 'analytic', args.steps, device=device
+                    )
+                    
+                    samples = sampling_fn(model)
 
-                text_samples = tokenizer.batch_decode(samples)
-                for i in text_samples:
-                    print(i)
-                    print("=================================================")
-                
-                
-                with torch.no_grad():
-                    eval_model = GPT2LMHeadModel.from_pretrained("gpt2-large").to(device).eval()
-                    total_perplexity = 0
-                    batch_size = 1
-                    num_batches = samples.shape[0] // batch_size
+                    text_samples = tokenizer.batch_decode(samples)
+                    for i in text_samples:
+                        print(i)
+                        print("=================================================")
+                    
+                    
+                    with torch.no_grad():
+                        eval_model = GPT2LMHeadModel.from_pretrained("gpt2-large").to(device).eval()
+                        total_perplexity = 0
+                        batch_size = 1
+                        num_batches = samples.shape[0] // batch_size
 
-                    for i in range(num_batches):
-                        s = samples[i * batch_size:(i + 1) * batch_size]
-                        loss, logits = eval_model(s, labels=s)[:2]
-                        logits = logits.transpose(-1, -2)
-                        perplexity = F.cross_entropy(logits[..., :-1], s[..., 1:], reduction="none").mean(dim=-1).exp().mean()
-                        total_perplexity += perplexity
+                        for i in range(num_batches):
+                            s = samples[i * batch_size:(i + 1) * batch_size]
+                            loss, logits = eval_model(s, labels=s)[:2]
+                            logits = logits.transpose(-1, -2)
+                            perplexity = F.cross_entropy(logits[..., :-1], s[..., 1:], reduction="none").mean(dim=-1).exp().mean()
+                            total_perplexity += perplexity
 
-                    total_perplexity /= num_batches
-                    dist.all_reduce(total_perplexity)
-                    print(f"Generative Perplexity at step: {total_perplexity:.3f}")
+                        total_perplexity /= num_batches
+                        dist.all_reduce(total_perplexity)
+                        print(f"Generative Perplexity at step: {total_perplexity:.3f}")
 
-                cleanup()
-            
-                # breakpoint()
-                max_match_percent, actual_length_used, max_num_matches, best_start = calculate_green_matches_no_index(samples, gamma)
-                true_num_green = gamma * actual_length_used
-                z_score = (max_num_matches - true_num_green) / math.sqrt(true_num_green * (1-gamma))
-                print(f"Percent match: {max_match_percent}")
-                water_data = {
-                    "gamma": gamma,
-                    "amplification": amplification,
-                    "step_to_watermark": step_to_watermark,
-                    "max_match_percent": max_match_percent,
-                    "perplexity": float(total_perplexity.item()),
-                    "z_score": float(z_score),
-                    "actual_length_used": actual_length_used,
-                    "max_num_matches": max_num_matches,
-                    "best_start": best_start
-                }
-                print(f"Water data: {water_data}")
-                water_data_arr.append(water_data)
+                    cleanup()
                 
+                    # breakpoint()
+                    # max_match_percent, actual_length_used, max_num_matches, best_start = calculate_green_matches_no_index(samples, gamma)
+                    # true_num_green = gamma * actual_length_used
+                    # z_score = (max_num_matches - true_num_green) / math.sqrt(true_num_green * (1-gamma))
+                    # print(f"Percent match: {max_match_percent}")
+                    # water_data = {
+                    #     "model_seed": model_seed,
+                    #     "gamma": gamma,
+                    #     "amplification": amplification,
+                    #     "step_to_watermark": step_to_watermark,
+                    #     "max_match_percent": max_match_percent,
+                    #     "perplexity": float(total_perplexity.item()),
+                    #     "z_score": float(z_score),
+                    #     "actual_length_used": actual_length_used,
+                    #     "max_num_matches": max_num_matches,
+                    #     "best_start": best_start
+                    # }
+                    # print(f"Water data: {water_data}")
+                    # water_data_arr.append(water_data)
                 
-            # change here
-            # Save to CSV file after each amplification iteration
-            with open(filename, 'w', newline='') as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=water_data.keys())
-                writer.writeheader()
-                writer.writerows(water_data_arr)
-            print(f"Saved results to {filename}")
-            
-            # Reset water_data_arr for next amplification
-            water_data_arr = []
+                    # if model_seed % 30 == 0:
+                    #     # change here
+                    #     # Save to CSV file after each amplification iteration
+                    #     with open(filename, 'w', newline='') as csvfile:
+                    #         writer = csv.DictWriter(csvfile, fieldnames=water_data.keys())
+                    #         writer.writeheader()
+                    #         writer.writerows(water_data_arr)
+                    #     print(f"Saved results to {filename}")
+                        
+                    #     # Reset water_data_arr for next amplification
+                    #     water_data_arr = []
 
 if __name__=="__main__":
     main()
