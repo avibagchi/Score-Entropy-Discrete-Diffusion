@@ -91,7 +91,7 @@ class AnalyticPredictor(Predictor):
             # New formula: amplification=1 does nothing, amplification=2 scales by 2
             score = score * (1 + green_mask * (amplification - 1))
             
-
+        # breakpoint()
         stag_score = self.graph.staggered_score(score, dsigma)
         probs = stag_score * self.graph.transp_transition(x, dsigma)
 
@@ -183,6 +183,7 @@ def get_pc_sampler(is_tree_ring, amplification, green_mask, step_to_watermark, g
             # breakpoint()
             x = embed_tree_ring(x, batch_dims, device)  # shape: [B, L]
             x = torch.clamp(x.round().long(), 0, 50257)
+            # breakpoint()
         else:
             x = graph.sample_limit(*batch_dims).to(device)
         
@@ -190,7 +191,9 @@ def get_pc_sampler(is_tree_ring, amplification, green_mask, step_to_watermark, g
         timesteps = torch.linspace(1, eps, steps + 1, device=device)
         dt = (1 - eps) / steps
         
-        for i in range(steps):     
+        for i in range(steps):
+            if i == 500:
+                breakpoint()     
             t = timesteps[i] * torch.ones(x.shape[0], 1, device=device)
             x = projector(x)
             if i <= step_to_watermark: # changed here

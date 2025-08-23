@@ -245,14 +245,12 @@ class Absorbing(Graph):
         pass
     
     def transp_transition(self, i, sigma):
+        # breakpoint()
         sigma = unsqueeze_as(sigma, i[..., None])
         edge = (-sigma).exp() * F.one_hot(i, num_classes=self.dim)
-        edge += torch.where(
-            i == self.dim - 1,
-            1 - (-sigma).squeeze(-1).exp(),
-            0
-        )[..., None]
         # breakpoint()
+        edge += torch.where(i == self.dim - 1, 1 - (-sigma).squeeze(-1).exp(), 0)[..., None]
+        
         return edge
 
     def sample_transition(self, i, sigma):
