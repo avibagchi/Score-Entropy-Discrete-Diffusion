@@ -84,6 +84,7 @@ class AnalyticPredictor(Predictor):
         next_sigma = self.noise(t - step_size)[0]
         dsigma = curr_sigma - next_sigma
 
+        breakpoint()
         score = score_fn(x, curr_sigma)
 
         if (amplification > 0):
@@ -192,8 +193,9 @@ def get_pc_sampler(is_tree_ring, amplification, green_mask, step_to_watermark, g
         dt = (1 - eps) / steps
         
         for i in range(steps):
-            if i == 500:
-                breakpoint()     
+            #breakpoint()
+            # if i == 1023:
+            #     breakpoint()     
             t = timesteps[i] * torch.ones(x.shape[0], 1, device=device)
             x = projector(x)
             if i <= step_to_watermark: # changed here

@@ -30,8 +30,8 @@ ngpus: 1
 tokens: 50257 # changed from 50257 in tinystories case
 
 training:
-  batch_size: 64 # changed from 512
-  accum: 4 # changed from 1
+  batch_size: 512 # changed from 512
+  accum: 1 # changed from 1
   n_iters: 1300001
   snapshot_freq: 10000 # 50000
   log_freq: 50
@@ -42,12 +42,12 @@ training:
   ema: 0.9999
 
 data:
-  train: tinystories # changed from openwebtext
-  valid: tinystories # changed from wikitext103
-  cache_dir: /scratch3/workspace/avbagchi_umass_edu-data_center/uniform
+  train: openwebtext # changed from openwebtext
+  valid: wikitext103 # changed from wikitext103
+  cache_dir: /work/nvme/bemc/abagchi2/trained_models_openwebtext
 
 graph:
-  type: absorb # changed from uniform
+  type: uniform # changed from uniform
   file: data
   report_all: False
 
@@ -57,14 +57,14 @@ noise:
   sigma_max: 20
 
 sampling:
-  predictor: euler
+  predictor: analytic # changed from euler
   steps: 128
   noise_removal: True
 
 eval:
   batch_size: 512
   perplexity: True
-  perplexity_batch_size: 1 # changed from 8
+  perplexity_batch_size: 8 # changed from 1
 
 optim:
   weight_decay: 0
@@ -93,4 +93,4 @@ hydra:
     gpus_per_node: ${ngpus}
     constraint: null
 
-work_dir: '/home/avbagchi_umass_edu/Score-Entropy-Discrete-Diffusion/' # changed
+work_dir: '/work/nvme/bemc/abagchi2/Score-Entropy-Discrete-Diffusion/' # changed

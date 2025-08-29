@@ -238,6 +238,6 @@ def _run(rank, world_size, cfg):
 # added this 
 if __name__ == "__main__":
     print("starting!")
-    root_dir = '/home/avbagchi_umass_edu/Score-Entropy-Discrete-Diffusion/configs'
+    root_dir = '/work/nvme/bemc/abagchi2/Score-Entropy-Discrete-Diffusion/configs'
     cfg = utils.load_hydra_config_from_run(root_dir, True)
     run_multiprocess(rank=0, world_size=1, cfg=cfg, port=29500)
