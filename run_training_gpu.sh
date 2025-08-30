@@ -1,21 +1,28 @@
 #!/bin/bash
-#SBATCH --job-name=sedd_gpu_job       # Job name
-#SBATCH --output=output.txt           # Output log file
-#SBATCH --error=error.txt             # Error log file
-#SBATCH --partition=gpu               # Request a GPU partition
-#SBATCH --gres=gpu:1                  # Request 1 GPU
-#SBATCH --nodes=1                     # Request 1 node
-#SBATCH --ntasks=1                    # Number of tasks (1 per GPU job)
-#SBATCH --cpus-per-task=4             # Number of CPU cores per task
-#SBATCH --mem=48G                     # Memory per node
-#SBATCH --time=02:00:00               # Time limit
-#SBATCH --constraint="a100|a40|l40s" # Request GPUs with compute capability 8.0 or higher
+#SBATCH --job-name=sedd_h200_job       # Job name
+#SBATCH --output=output.txt            # Output log file
+#SBATCH --error=error.txt              # Error log file
+#SBATCH --partition=gpuH200x8          # Partition with 8× H200 GPUs
+#SBATCH --account=bemc-delta-gpu         # Your valid Slurm account
+#SBATCH --gres=gpu:2                   # Request 2 GPUs
+#SBATCH --nodes=1                      # Request 1 node
+#SBATCH --ntasks=1                     # One task (you can adjust for multi-GPU)
+#SBATCH --cpus-per-task=16             # 16 cores per GPU is safe
+#SBATCH --mem=96G                      # Memory for the job
+#SBATCH --time=04:00:00                # Time limit
 
-module load cuda/11.8.0
+# Load correct CUDA for H200
+# module purge
+module load python/3.10.13
+module load cuda/12.3.0
 
-module load miniconda/22.11.1-1
+# Activate your Python environment
+source /work/nvme/bemc/python_envs/sedd_env_3/bin/activate
 
+# Debug info
+echo "Running on $HOSTNAME"
+echo "GPUs allocated:"
+nvidia-smi
 
-echo "Conda environment: $(which python)"
-
-python run_train.py # changed this 
+# Launch training
+python train.py
