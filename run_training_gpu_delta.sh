@@ -2,7 +2,7 @@
 #SBATCH --job-name=sedd_a100_job       # Job name
 #SBATCH --output=output.txt            # Output log file
 #SBATCH --error=error.txt              # Error log file
-#SBATCH --partition=gpuA100x4         
+#SBATCH --partition=gpuA100x4-preempt         
 #SBATCH --account=bemc-delta-gpu         # Your valid Slurm account
 #SBATCH --gres=gpu:2                   # Request 2 GPUs
 #SBATCH --nodes=1                      # Request 1 node
