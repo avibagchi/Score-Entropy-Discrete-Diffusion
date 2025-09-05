@@ -5,38 +5,38 @@ defaults:
 
 # added this from medium.yaml
 model:
-  name: medium
+  name: small # medium
   type: ddit
-  hidden_size: 1024
+  hidden_size: 768 # 1024
   cond_dim: 128
   length: 1024
-  n_blocks: 24
-  n_heads: 16
+  n_blocks: 12 # 24
+  n_heads: 12 # 16
   scale_by_sigma: False # change this
   dropout: 0.1
   ngpus: 2
   tokens: 50257 # changed from 50257 in tinystories case
 
-name: medium
+name: small # medium
 type: ddit
-hidden_size: 1024
+hidden_size: 768 # 1024
 cond_dim: 128
 length: 1024
-n_blocks: 24
-n_heads: 16
+n_blocks: 12 # 24
+n_heads: 12 # 16
 scale_by_sigma: False # change this 
 dropout: 0.1
 ngpus: 2
 tokens: 50257 # changed from 50257 in tinystories case
 
 training:
-  batch_size: 512 # changed from 512
-  accum: 8 # changed from 1
-  n_iters: 1300001
-  snapshot_freq: 10000 # 50000
+  batch_size: 128 # changed from 512
+  accum: 4 # changed from 1
+  n_iters: 1300001 # 46875 
+  snapshot_freq: 5000 # 5100 # 10000 # 50000
   log_freq: 50
   eval_freq: 100
-  snapshot_freq_for_preemption: 1000 # changed from 10000
+  snapshot_freq_for_preemption: 500 # changed from 10000
   weight: standard
   snapshot_sampling: True
   ema: 0.9999
@@ -44,7 +44,7 @@ training:
 data:
   train: openwebtext # changed from openwebtext
   valid: wikitext103 # changed from wikitext103
-  cache_dir: /work/nvme/bemc/abagchi2/trained_models_openwebtext
+  cache_dir: /work/nvme/bemc/abagchi2/trained_models_openwebtext_small # _128batch
 
 graph:
   type: uniform # changed from uniform
@@ -64,7 +64,7 @@ sampling:
 eval:
   batch_size: 512
   perplexity: True
-  perplexity_batch_size: 8 # changed from 1
+  perplexity_batch_size: 1 # changed from 1
 
 optim:
   weight_decay: 0

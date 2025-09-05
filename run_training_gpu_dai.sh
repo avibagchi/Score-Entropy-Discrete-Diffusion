@@ -7,7 +7,7 @@
 #SBATCH --gres=gpu:h100:2                   # Request 2 GPUs
 #SBATCH --cpus-per-gpu=72              # 72 CPUs per GPU (like interactive)
 #SBATCH --mem=0                        # Let Slurm auto-assign full memory
-#SBATCH --time=01:00:00                # Time limit (20 minutes)
+#SBATCH --time=48:00:00                # Time limit (48 hours)
 #SBATCH --nodes=1                      # Single node
 #SBATCH --ntasks=1                     # Single task
 

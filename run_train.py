@@ -191,6 +191,7 @@ def _run(rank, world_size, cfg):
 
                 # Generate and save samples
                 if cfg.training.snapshot_sampling:
+                    # breakpoint()
                     mprint(f"Generating text at step: {step}")
 
                     this_sample_dir = os.path.join(sample_dir, "iter_{}".format(step))
@@ -205,11 +206,29 @@ def _run(rank, world_size, cfg):
                     for i, sentence in enumerate(sentences):
                         print(f"Sample {i}:\n{sentence}\n{'='*80}")
                     
+                    
                     file_name = os.path.join(this_sample_dir, f"sample_{rank}.txt")
-                    with open(file_name, 'w') as file:
-                        for sentence in sentences:
-                            file.write(sentence + "\n")
-                            file.write("============================================================================================\n")
+                    print(f"DEBUG: Writing {len(sentences)} sentences to {file_name}")
+                    
+                    try:
+                        with open(file_name, 'w', encoding='utf-8') as file:
+                            for sentence in sentences:
+                                file.write(sentence + "\n")
+                                file.write("============================================================================================\n")
+                        print(f"DEBUG: Successfully wrote to {file_name}")
+                    except Exception as e:
+                        print(f"ERROR: Failed to write to {file_name}: {e}")
+                        # Fallback: try without encoding specification
+                        try:
+                            with open(file_name, 'w') as file:
+                                for sentence in sentences:
+                                    # Clean any problematic characters
+                                    clean_sentence = sentence.encode('ascii', errors='replace').decode('ascii')
+                                    file.write(clean_sentence + "\n")
+                                    file.write("============================================================================================\n")
+                            print(f"DEBUG: Wrote to {file_name} using fallback method")
+                        except Exception as e2:
+                            print(f"ERROR: Fallback also failed: {e2}")
 
                     if cfg.eval.perplexity:
                         with torch.no_grad():
