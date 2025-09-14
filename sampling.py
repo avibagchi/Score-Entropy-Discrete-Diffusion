@@ -84,7 +84,7 @@ class AnalyticPredictor(Predictor):
         next_sigma = self.noise(t - step_size)[0]
         dsigma = curr_sigma - next_sigma
 
-        breakpoint()
+        # breakpoint()
         score = score_fn(x, curr_sigma)
 
         if (amplification > 0):
